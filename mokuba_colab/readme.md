@@ -1,3 +1,4 @@
+# mokuba_calob
 I make My Own Modules from the workflow that I use whenever I make images. My workflow is based on Hires.fix. That works on Google Colab and Kaggle by torch.float16. And that doesn't work for Flux.<br>
 ## requirements
 Change the runtime type to T4 GPU.<br>
@@ -15,7 +16,8 @@ sys.path.append( module_path )
 import mokuba_colab
 ```
 ## explanations
-mokuba_colab.text2image( loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe)
+mokuba_colab.text2image(<p style="padding-left:2em;">loras,</p> 
+lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe)
 
 loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 
