@@ -9,8 +9,9 @@ prompt=
 prompt_ids = pipe.tokenizer(prompt).input_ids
 
 #get tokenid from token
-tokenid = tokenizer.convert_tokens_to_ids(token)
+tokenid = pipe.tokenizer.convert_tokens_to_ids(token)
 
 #reverse
 for tokenid in tokenids:
   token = pipe.tokenizer.convert_ids_to_tokens(tokenid)
+pipe.text_encoder
