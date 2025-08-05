@@ -13,3 +13,6 @@ pip install safetensors==0.5.3
 2. select the checkpoint file ( .safetensors file ).
 3. click run button.
 4. a file that ".safetensor" of the checkpoint file turn into "_vae.safetensors" is made.
+## When you don't kwon a lot about python
+Please download get_vae.exe from next link.  
+[releases page](https://github.com/MokubaAttack/scripts/releases/tag/get_vae)
