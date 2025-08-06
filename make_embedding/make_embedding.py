@@ -43,8 +43,8 @@ def mkemb(in_path,prompt,st):
         embs=torch.cat(prompt_tens, dim=0)
         embs2=torch.cat(prompt_tens2, dim=0)
         out_dict={}
-        out_dict["clip_l"]=embs
-        out_dict["clip_g"]=embs2
+        out_dict["clip_l"]=st*embs
+        out_dict["clip_g"]=st*embs2
         save_file(out_dict,out)
         sg.popup(out,title="fin")
     except:
