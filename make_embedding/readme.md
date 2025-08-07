@@ -23,11 +23,11 @@ prompt that I made to embedding
 **No Embedding**  
 ![no embedding](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/noemb.png)
 
-**strength = 1.0**
-![strength = 1.0](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength10.png)
+**strength = 0.25**
+![strength = 1.0](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength025.png)
 
-**strength = 1.5**
-![strength = 1.5](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength15.png)
+**strength = 0.5**
+![strength = 1.5](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength05.png)
 
 **strength = 2.0**
 ![strength = 2.0](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength20.png)
