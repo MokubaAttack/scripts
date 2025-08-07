@@ -29,5 +29,5 @@ prompt that I made to embedding
 **strength = 0.5**
 ![strength = 1.5](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength05.png)
 
-**strength = 2.0**
-![strength = 2.0](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength20.png)
+**strength = 1.0**
+![strength = 2.0](https://github.com/MokubaAttack/scripts/blob/main/make_embedding/strength10.png)
