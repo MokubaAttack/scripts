@@ -13,6 +13,3 @@ pip install FreeSimpleGUI==5.2.0.post1
 2. select the lora file ( .safetensors file ).
 3. click run button.
 4. a file that ".safetensor" of the checkpoint file turn into "_mod.safetensors" is made.
-## When you don't kwon a lot about python
-Please download lora_mod.exe from next link.  
-[releases page](https://github.com/MokubaAttack/scripts/releases/tag/lora_mod)
