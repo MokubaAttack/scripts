@@ -1,5 +1,5 @@
 # make_embedding
-It is a script that make a embedding from text.
+It is a script that makes a embedding from text.
 ## requirements
 python modules
 ```
