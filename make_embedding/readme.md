@@ -14,8 +14,8 @@ pip install accelerate==1.10.0
 2. Select the checkpoint file ( .safetensors file ).
 3. Input prompt that you want to make a embedding of.  
    ( Text separated by commas are one concept. For example, "1girl, solo , bleu dress, upper body, looking at viewer" is a embedding that has 5 concepts. )
-5. Click run button.
-4. A file that ".safetensor" of the checkpoint file turn into "_emb.safetensors" is made.
+4. Click run button.
+5. A file that ".safetensor" of the checkpoint file turn into "_emb.safetensors" is made.
 ## the efficacy of prompt strength
 seed = 854796723  
 prompt = "1girl,solo,blue dress,waving"  
