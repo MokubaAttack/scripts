@@ -9,3 +9,5 @@ I make My Own Modules from the workflow that I use whenever I make images. My wo
 When the message "ValueError: Checkpoint not supported because layer lora_unet_label_emb_0_0.alpha not supported." appears,try to run this program. I'm successful in lora of Illustrious model.
 ## [make_embedding](https://github.com/MokubaAttack/scripts/tree/main/make_embedding)
 It is a script that make a embedding from text.
+## [make_embedding](https://github.com/MokubaAttack/scripts/tree/main/make_safetensors)
+It is a script that merges checkpoint and vae, lora.
