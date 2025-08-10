@@ -6,14 +6,15 @@ import os
 from safetensors.torch import load_file
 import FreeSimpleGUI as sg
 
-os.environ['HF_HOME']=os.getcwd()+"/.cache/huggingface"
+if not(os.path.exists(os.getcwd()+"/pipecache")):
+    os.mkdir(os.getcwd()+"/pipecache")
 
 def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
     dtype=torch.float16
     if not(os.path.exists(base_safe)):
         sg.popup("the ckpt file doesn't exist.",title="error")
         return
-    pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype)
+    pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype,cache_dir=os.getcwd()+"/pipecache")
     pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
     if vae_safe!="":
         if os.path.exists(vae_safe):
@@ -66,6 +67,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
     returncode = subprocess.call(cmd)
 
     shutil.rmtree(os.getcwd()+"/dummy")
+    sg.popup(out_safe,title="fin")
     
 layout =[
     [sg.Text("checkpoint file")],
@@ -101,7 +103,7 @@ while True:
         )
         window['out'].update(file_path)
 
-    elif event=="RUN":
+    elif event=="Run":
         base_safe=values["ckpt"]
         vae_safe=values["vae"]
         out_safe=values["out"]
