@@ -18,7 +18,7 @@ def mkemb(in_path,prompt,st):
 
     try:
         out=in_path.replace(".safetensors","_emb.safetensors")
-        pipe=StableDiffusionXLPipeline.from_single_file(in_path,torch_dtype=torch.float16)
+        pipe=StableDiffusionXLPipeline.from_single_file(in_path,torch_dtype=torch.float16,cache_dir=os.getcwd()+"/pipecache")
         
         prompt_list=prompt.split(",")
         prompt_tens=[]
