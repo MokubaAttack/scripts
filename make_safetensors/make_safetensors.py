@@ -63,7 +63,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
 
     pipe.save_pretrained(os.getcwd()+"/dummy", safe_serialization=True)
 
-    cmd="python convert_diffusers_to_original_sdxl.py --model_path "+os.getcwd()+"/dummy --checkpoint_path "+out_safe+" --use_safetensors"            
+    cmd="pipenv run python convert_diffusers_to_original_sdxl.py --model_path "+os.getcwd()+"/dummy --checkpoint_path "+out_safe+" --use_safetensors"            
     returncode = subprocess.call(cmd)
 
     shutil.rmtree(os.getcwd()+"/dummy")
