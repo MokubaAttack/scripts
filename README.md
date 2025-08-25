@@ -1,6 +1,6 @@
 # scripts
 Sorry, I am not good at English.  
-There are scripts that I use when I create images by diffusers. Scripts that run to open gui and Scripts that you need to rewrite about the input path, the output path etc are mixed together.  
+There are scripts that I use when I create images by diffusers or make models. Scripts that run to open gui and Scripts that you need to rewrite about the input path, the output path etc.  
 ## [get_vae](https://github.com/MokubaAttack/scripts/tree/main/get_vae)
 It is a script that extracts a vae safetensors from a checkpoint safetensors. I'm successful in sdxl model.
 ## [mokuba_colab](https://github.com/MokubaAttack/scripts/tree/main/mokuba_colab)
