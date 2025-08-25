@@ -9,7 +9,7 @@ pip install FreeSimpleGUI==5.2.0.post1
 pip install packaging==25.0
 pip install numpy==2.3.2
 ```
-data files
+data files  
 You need to save data.txt in the directory that you save merge_ckpt.py in.
 ## How to use
 1. Run this script.
