@@ -1,6 +1,6 @@
 # scripts
-Sorry, I am not good at English.<br>
-There are scripts that I use when I create images by diffusers. Scripts that run to open gui and Scripts that you need to rewrite about the input path, the output path etc are mixed together.<br>
+Sorry, I am not good at English.  
+There are scripts that I use when I create images by diffusers. Scripts that run to open gui and Scripts that you need to rewrite about the input path, the output path etc are mixed together.  
 ## [get_vae](https://github.com/MokubaAttack/scripts/tree/main/get_vae)
 It is a script that extracts a vae safetensors from a checkpoint safetensors. I'm successful in sdxl model.
 ## [mokuba_colab](https://github.com/MokubaAttack/scripts/tree/main/mokuba_colab)
@@ -10,4 +10,6 @@ When the message "ValueError: Checkpoint not supported because layer lora_unet_l
 ## [make_embedding](https://github.com/MokubaAttack/scripts/tree/main/make_embedding)
 It is a script that make a embedding from text.
 ## [make_safetensors](https://github.com/MokubaAttack/scripts/tree/main/make_safetensors)
-It is a script that merges checkpoint and vae, lora.
+It is a script that burns a vae and loras in a checkpoint. This script is based on convert_diffusers_to_original_sdxl.py of huggingface/diffusers.
+## [merge_ckpt](https://github.com/MokubaAttack/scripts/tree/main/marge_ckpt)
+It is a script that merge checkpoints.
