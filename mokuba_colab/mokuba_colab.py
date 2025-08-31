@@ -217,12 +217,14 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
     del dt_now,logfile
     
     if loras!=[]:
+        i=0
         for line in loras:
-            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name=line)
+            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
             print(line+".safetensors is loaded.")
-        pipe.set_adapters(loras, adapter_weights=lora_weights)
-        pipe.fuse_lora()
-        pipe.unload_lora_weights()
+            pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
+            pipe.fuse_lora()
+            pipe.unload_lora_weights()
+            i=i+1
         
     if pos_emb!=[]:
         i=1
@@ -323,11 +325,13 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
             
         if loras!=[]:
+            i=0
             for line in loras:
-                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name=line)
-            pipe.set_adapters(loras, adapter_weights=lora_weights)
-            pipe.fuse_lora()
-            pipe.unload_lora_weights()
+                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
+                pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
+                pipe.fuse_lora()
+                pipe.unload_lora_weights()
+                i=i+1
 
         if pos_emb!=[]:
             i=1
@@ -589,12 +593,14 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     del dt_now,logfile
         
     if loras!=[]:
+        i=0
         for line in loras:
-            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name=line)
+            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
             print(line+".safetensors is loaded.")
-        pipe.set_adapters(loras, adapter_weights=lora_weights)
-        pipe.fuse_lora()
-        pipe.unload_lora_weights()
+            pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
+            pipe.fuse_lora()
+            pipe.unload_lora_weights()
+            i=i+1
 
     if pos_emb!=[]:
         i=1
@@ -681,11 +687,13 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
             
         if loras!=[]:
+            i=0
             for line in loras:
-                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name=line)
-            pipe.set_adapters(loras, adapter_weights=lora_weights)
-            pipe.fuse_lora()
-            pipe.unload_lora_weights()
+                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
+                pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
+                pipe.fuse_lora()
+                pipe.unload_lora_weights()
+                i=i+1
             
         if pos_emb!=[]:
             i=1
