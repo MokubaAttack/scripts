@@ -11,5 +11,7 @@ When the message "ValueError: Checkpoint not supported because layer lora_unet_l
 It is a script that make a embedding from text.
 ## [make_safetensors](https://github.com/MokubaAttack/scripts/tree/main/make_safetensors)
 It is a script that burns a vae and loras in a checkpoint. This script is based on convert_diffusers_to_original_sdxl.py of huggingface/diffusers.
-## [merge_ckpt](https://github.com/MokubaAttack/scripts/tree/main/marge_ckpt)
+## [merge_ckpt](https://github.com/MokubaAttack/scripts/tree/main/merge_ckpt)
 It is a script that merge checkpoints.
+## [MergeLoraBySVD](https://github.com/MokubaAttack/scripts/tree/main/MergeLoraBySVD)
+I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module.
