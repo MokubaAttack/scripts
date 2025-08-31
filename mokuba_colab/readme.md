@@ -5,7 +5,10 @@ Change the runtime type to T4 GPU.<br>
 Next, run next code on Notebook. ( folder_path is the folder path that you save mokuba_colab.py in. )<br>
 ```
 !pip install compel
+#In Kaggle
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
+#In Google
+!pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu126
 
 import sys
 import os
