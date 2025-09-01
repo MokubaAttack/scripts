@@ -219,10 +219,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
     if loras!=[]:
         i=0
         for line in loras:
-            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
+            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
             print(line+".safetensors is loaded.")
-            pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
-            pipe.fuse_lora()
+            pipe.fuse_lora(lora_scale= lora_weights[i])
             pipe.unload_lora_weights()
             i=i+1
         
@@ -327,9 +326,8 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         if loras!=[]:
             i=0
             for line in loras:
-                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
-                pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
-                pipe.fuse_lora()
+                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
+                pipe.fuse_lora(lora_scale= lora_weights[i])
                 pipe.unload_lora_weights()
                 i=i+1
 
@@ -595,10 +593,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     if loras!=[]:
         i=0
         for line in loras:
-            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
+            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
             print(line+".safetensors is loaded.")
-            pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
-            pipe.fuse_lora()
+            pipe.fuse_lora(lora_scale= lora_weights[i])
             pipe.unload_lora_weights()
             i=i+1
 
@@ -689,9 +686,8 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         if loras!=[]:
             i=0
             for line in loras:
-                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype, adapter_name="lora")
-                pipe.set_adapters(["lora"], adapter_weights=[lora_weights[i]])
-                pipe.fuse_lora()
+                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
+                pipe.fuse_lora(lora_scale= lora_weights[i])
                 pipe.unload_lora_weights()
                 i=i+1
             
