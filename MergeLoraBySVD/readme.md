@@ -19,3 +19,19 @@ pip install imagesize==1.4.1
 ```
 github repository  
 [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
+## setup
+1. App path of sd-scripts directory to system path.
+2. Save MergeLoraBySVD to sd-scripts directory or current directory.
+## explanations
+MergeLoraBySVD.merge(  
+    loras=[],  
+    weights=[],  
+    lbws = [],  
+    precision="float",  
+    save_precision="fp16",  
+    new_rank=16,  
+    new_conv_rank=None,  
+    device=None,  
+    no_metadata=True,  
+    save_to=None  
+)
