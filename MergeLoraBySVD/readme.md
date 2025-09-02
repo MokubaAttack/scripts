@@ -23,15 +23,29 @@ github repository
 1. App path of sd-scripts directory to system path.
 2. Save MergeLoraBySVD to sd-scripts directory or current directory.
 ## explanations
-MergeLoraBySVD.merge(  
-    loras=[],  
-    weights=[],  
-    lbws = [],  
-    precision="float",  
-    save_precision="fp16",  
-    new_rank=16,  
-    new_conv_rank=None,  
-    device=None,  
-    no_metadata=True,  
-    save_to=None  
-)
+**MergeLoraBySVD.merge(**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+#list of lora file  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**loras=[],**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+#list of lora weight  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**weights=[],**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**lbws = [],**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**precision="float",**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**save_precision="fp16",**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**new_rank=16,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**new_conv_rank=None,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**device=None,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**no_metadata=True,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**save_to=None**  
+**)**
