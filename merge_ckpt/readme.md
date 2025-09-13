@@ -3,11 +3,13 @@ It is a script that merge checkpoints.
 ## requirements
 python modules
 ```
-pip install safetensors==0.6.2
-pip install torch==2.8.0
-pip install FreeSimpleGUI==5.2.0.post1
-pip install packaging==25.0
-pip install numpy==2.3.2
+pip install safetensors
+pip install torch
+pip install FreeSimpleGUI
+pip install packaging
+pip install numpy
+pip install plyer
+pip install pyperclip
 ```
 data files  
 You need to save data.txt in the directory that you save merge_ckpt.py in.
