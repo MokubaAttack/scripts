@@ -3,12 +3,14 @@ It is a script that burns a vae and loras in a checkpoint. This script is based 
 ## requirements
 python modules
 ```
-pip install diffusers==0.34.0
-pip install torch==2.7.1
-pip install FreeSimpleGUI==5.2.0.post1
-pip install transformers==4.55.0
-pip install accelerate==1.10.0
-pip install PEFT==0.17.0
+pip install diffusers
+pip install torch
+pip install FreeSimpleGUI
+pip install transformers
+pip install accelerate
+pip install PEFT
+pip install plyer
+pip install pyperclip
 ```
 ## How to use
 1. Run this script.
