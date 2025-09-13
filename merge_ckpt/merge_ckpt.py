@@ -2,14 +2,21 @@ import FreeSimpleGUI as sg
 import os
 from safetensors.torch import save_file,load_file
 import torch
+import tkinter as tk
+import pyperclip
+from plyer import notification
+import threading
 
 def mergeckpt(ckpts,weights,v,out_path):
+    w.find_element('RUN').Update(disabled=True)
     if not(out_path.endswith(".safetensors")):
-        sg.popup("You need to select the safetensors file for output path.",title = "error")
+        w.find_element('RUN').Update(disabled=False)
+        notification.notify(title="error",message=path+" does not exist.",timeout=8)
         return
     for path in ckpts:
         if not(os.path.exists(path)):
-            sg.popup(path+" does not exist.",title = "error")
+            w.find_element('RUN').Update(disabled=False)
+            notification.notify(title="error",message="I failed in the output.",timeout=8)
             return
     try:
         weights_sum=sum(weights)
@@ -47,30 +54,44 @@ def mergeckpt(ckpts,weights,v,out_path):
             f.write("vae : None\n")
         f.close()
         del out_dict,state_dict
-        sg.popup(out_path,title = "fin")
+        w.find_element('RUN').Update(disabled=False)
+        notification.notify(title="fin",message=out_path,timeout=8)
     except:
-        sg.popup("I failed in the output.",title = "error")
+        w.find_element('RUN').Update(disabled=False)
+        notification.notify(title="error",message="I failed in the output.",timeout=8)
+        
+keys=[
+    "ckpt1","ckpt2","ckpt3","ckpt4","ckpt5","ckpt6","ckpt7",
+    "w1","w2","w3","w4","w5","w6","w7","out"
+]        
+for key in keys:
+    grp_rclick_menu[key]=[
+        "",
+        [
+            "-copy-::"+key,"-cut-::"+key,"-paste-::"+key
+        ]
+    ]
 
 box1=[
     [sg.Text("checkpoint file")],
-    [sg.Column([[sg.Text("ckpt1"), sg.Input(key="ckpt1"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt2"), sg.Input(key="ckpt2"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt3"), sg.Input(key="ckpt3"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt4"), sg.Input(key="ckpt4"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt5"), sg.Input(key="ckpt5"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt6"), sg.Input(key="ckpt6"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
-    [sg.Column([[sg.Text("ckpt7"), sg.Input(key="ckpt7"),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))]
+    [sg.Column([[sg.Text("ckpt1"), sg.Input(key="ckpt1",right_click_menu=grp_rclick_menu["ckpt1"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt2"), sg.Input(key="ckpt2",right_click_menu=grp_rclick_menu["ckpt2"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt3"), sg.Input(key="ckpt3",right_click_menu=grp_rclick_menu["ckpt3"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt4"), sg.Input(key="ckpt4",right_click_menu=grp_rclick_menu["ckpt4"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt5"), sg.Input(key="ckpt5",right_click_menu=grp_rclick_menu["ckpt5"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt6"), sg.Input(key="ckpt6",right_click_menu=grp_rclick_menu["ckpt6"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))],
+    [sg.Column([[sg.Text("ckpt7"), sg.Input(key="ckpt7",right_click_menu=grp_rclick_menu["ckpt7"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))]],size=(435,35))]
 ]
 
 box2=[
     [sg.Text("weight")],
-    [sg.Column([[sg.Input(key="w1")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w2")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w3")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w4")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w5")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w6")]],size=(80,35))],
-    [sg.Column([[sg.Input(key="w7")]],size=(80,35))]
+    [sg.Column([[sg.Input(key="w1",right_click_menu=grp_rclick_menu["w1"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w2",right_click_menu=grp_rclick_menu["w2"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w3",right_click_menu=grp_rclick_menu["w3"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w4",right_click_menu=grp_rclick_menu["w4"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w5",right_click_menu=grp_rclick_menu["w5"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w6",right_click_menu=grp_rclick_menu["w6"])]],size=(80,35))],
+    [sg.Column([[sg.Input(key="w7",right_click_menu=grp_rclick_menu["w7"])]],size=(80,35))]
 ]
 
 box3=[
@@ -86,7 +107,7 @@ box3=[
 
 layout=[
     [sg.Column(box1),sg.Column(box2),sg.Column(box3)],
-    [sg.Text("output path"), sg.Input(key="out"),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
+    [sg.Text("output path"), sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
     [sg.Button('RUN', key='RUN'),sg.Button('Cancel Vae', key='cancel'),sg.Button('EXIT', key='EXIT')]
 ]
 
@@ -119,9 +140,34 @@ while True:
                             window["w"+str(i+1)].update("1.0")
                     if values["v"+str(i+1)]:
                         v=i
-            mergeckpt(ckpts,weights,v,out_path)
+            thread1 = threading.Thread(target=mergeckpt,args=(ckpts,weights,v,out_path))
+            thread1.start()
     elif event=="cancel":
         for i in range(7):
             window["v"+str(i+1)].update(False)
+    elif "-copy-" in event:
+        try:
+            key=event.replace("-copy-::","")
+            selected = window[key].widget.selection_get()
+            pyperclip.copy(selected)
+        except:
+            pass
+    elif "-cut-" in event:
+        try:
+            key=event.replace("-cut-::","")
+            selected = window[key].widget.selection_get()
+            pyperclip.copy(selected)
+            window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+        except:
+            pass
+    elif "-paste-" in event:
+        try:
+            key=event.replace("-paste-::","")
+            selected = pyperclip.paste()
+            insert_pos = window[key].widget.index("insert")
+            window[key].Widget.insert(insert_pos, selected)
+            window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+        except:
+            pass
      
 window.close()
