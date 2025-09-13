@@ -9,9 +9,21 @@ import datetime
 from PIL import Image
 from IPython.display import display
 from compel import Compel, ReturnedEmbeddingsType
-from diffusers import DDIMScheduler, DDPMScheduler, PNDMScheduler, DPMSolverSinglestepScheduler, DPMSolverMultistepScheduler, LMSDiscreteScheduler, EulerDiscreteScheduler, EulerAncestralDiscreteScheduler, HeunDiscreteScheduler, KDPM2AncestralDiscreteScheduler
+from diffusers import EulerDiscreteScheduler
+from diffusers import EulerAncestralDiscreteScheduler
+from diffusers import LMSDiscreteScheduler
+from diffusers import HeunDiscreteScheduler
+from diffusers import KDPM2DiscreteScheduler
+from diffusers import KDPM2AncestralDiscreteScheduler
+from diffusers import DPMSolverMultistepScheduler
+from diffusers import DPMSolverSinglestepScheduler
+from diffusers import PNDMScheduler
+from diffusers import UniPCMultistepScheduler
+from diffusers import LCMScheduler
+from diffusers import DDIMScheduler
+from diffusers import DPMSolverSDEScheduler
 
-def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", prog_ver=2, pic_number=10, gs=7,f_step=10, step=30, ss=0.6, cs=1, Interpolation=3, sample=1,seed=0,out_folder="data",pos_emb=[],neg_emb=[],base_safe="base.safetensors",vae_safe="vae.safetensors"):
+def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", prog_ver=2, pic_number=10, gs=7,f_step=10, step=30, ss=0.6, cs=1, Interpolation=3, sample="DDIM",seed=0,out_folder="data",pos_emb=[],neg_emb=[],base_safe="base.safetensors",vae_safe="vae.safetensors"):
     
     memo="seed\n"
     print("seed")
@@ -69,11 +81,13 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         print("lora : weight")
         memo=memo+"lora : weight\n"
         for line in loras:
+            if line.endswith(".safetensors"):
+                line=line.replace(".safetensors","")
             if os.path.isfile(line+".safetensors"):
-                print(line+" : "+str(lora_weights[i])+" ok")
-                memo=memo+line+" : "+str(lora_weights[i])+"\n"
+                print(line+".safetensors : "+str(lora_weights[i])+" ok")
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+"\n"
             else:
-                print(line+" : "+str(lora_weights[i])+" ng")
+                print(line+".safetensors : "+str(lora_weights[i])+" ng")
                 return []
             i=i+1
     
@@ -168,38 +182,72 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
     else:
         pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda:0")
         
-    if sample==1:
+    if sample=="Euler":
+        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Euler\n"
+    elif sample=="Euler a":
+        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Euler a\n"
+    elif sample=="LMS":
+        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : LMS\n"
+    elif sample=="Heun":
+        pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Heun\n"
+    elif sample=="DPM2":
+        pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM2\n"
+    elif sample=="DPM2 a":
+        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM2 a\n"
+    elif sample=="DPM++ 2M":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ 2M\n"
+    elif sample=="DPM++ SDE":
+        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ SDE\n"
+    elif sample=="DPM++ 2M SDE":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
+        memo=memo+"scheduler : DPM++ 2M SDE\n"
+    elif sample=="LMS Karras":
+        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : LMS Karras\n"
+    elif sample=="DPM2 Karras":
+        pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM2 Karras\n"
+    elif sample=="DPM2 a Karras":
+        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM2 a Karras\n"
+    elif sample=="DPM++ 2M Karras":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 2M Karras\n"
+    elif sample=="DPM++ SDE Karras":
+        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ SDE Karras\n"
+    elif sample=="DPM++ 2M SDE Karras":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 2M SDE Karras\n"
+    elif sample=="PLMS":
+        pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : PLMS\n"
+    elif sample=="UniPC":
+        pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : UniPC\n"
+    elif sample=="LCM":
+        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : LCM\n"
+    elif sample=="DPM++ 3M SDE":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ 3M SDE\n"
+    elif sample=="DPM++ 3M SDE Karras":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 3M SDE Karras\n"
+    elif sample=="DPM++ 3M SDE Exponential":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+        memo=memo+"scheduler : DPM++ 3M SDE Exponential\n"
+    else:
         pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : DDIM\n"
-    elif sample==2:
-        pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DDPM\n"
-    elif sample==3:
-        pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : PNDM\n"
-    elif sample==4:
-        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DPMSolverSinglestep\n"
-    elif sample==5:
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DPMSolverMultistep\n"
-    elif sample==6:
-        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : LMSDiscrete\n"
-    elif sample==7:
-        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : EulerDiscrete\n"
-    elif sample==8:
-        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : EulerAncestralDiscrete\n"
-    elif sample==9:
-        pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : HeunDiscrete\n"
-    elif sample==0:
-        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DKDPM2AncestralDiscrete\n"
-    else:
-        memo=memo+"scheduler : original\n"
     
     memo=memo+"prompt\n"+prompt+"\n"
     memo=memo+"negative_prompt\n"+n_prompt+"\n"
@@ -219,6 +267,8 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
     if loras!=[]:
         i=0
         for line in loras:
+            if line.endswith(".safetensors"):
+                line=line.replace(".safetensors","")
             pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
             print(line+".safetensors is loaded.")
             pipe.fuse_lora(lora_scale= lora_weights[i])
@@ -302,30 +352,56 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         else:
             pipe = StableDiffusionXLImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to(d)
             
-        if sample==1:
-            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
-        elif sample==2:
-            pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
-        elif sample==3:
-            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-        elif sample==4:
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
-        elif sample==5:
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        elif sample==6:
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==7:
+        if sample=="Euler":
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==8:
+        elif sample=="Euler a":
             pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==9:
+        elif sample=="LMS":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Heun":
             pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==0:
+        elif sample=="DPM2":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM2 a":
             pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ SDE":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M SDE":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
+        elif sample=="LMS Karras":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 Karras":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 a Karras":
+            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ SDE Karras":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M SDE Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+        elif sample=="PLMS":
+            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="UniPC":
+            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="LCM":
+            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE Karras":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 3M SDE Exponential":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+        else:
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
             
         if loras!=[]:
             i=0
             for line in loras:
+                if line.endswith(".safetensors"):
+                    line=line.replace(".safetensors","")
                 pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
                 pipe.fuse_lora(lora_scale= lora_weights[i])
                 pipe.unload_lora_weights()
@@ -443,11 +519,13 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         print("lora : weight")
         memo=memo+"lora : weight\n"
         for line in loras:
+            if line.endswith(".safetensors"):
+                line=line.replace(".safetensors","")
             if os.path.isfile(line+".safetensors"):
-                print(line+" : "+str(lora_weights[i])+" ok")
-                memo=memo+line+" : "+str(lora_weights[i])+"\n"
+                print(line+".safetensors : "+str(lora_weights[i])+" ok")
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+"\n"
             else:
-                print(line+" : "+str(lora_weights[i])+" ng")
+                print(line+".safetensors : "+str(lora_weights[i])+" ng")
                 return []
             i=i+1
     
@@ -542,38 +620,72 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     else:
         pipe = StableDiffusionPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda:0")
         
-    if sample==1:
+    if sample=="Euler":
+        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Euler\n"
+    elif sample=="Euler a":
+        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Euler a\n"
+    elif sample=="LMS":
+        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : LMS\n"
+    elif sample=="Heun":
+        pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : Heun\n"
+    elif sample=="DPM2":
+        pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM2\n"
+    elif sample=="DPM2 a":
+        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM2 a\n"
+    elif sample=="DPM++ 2M":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ 2M\n"
+    elif sample=="DPM++ SDE":
+        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ SDE\n"
+    elif sample=="DPM++ 2M SDE":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
+        memo=memo+"scheduler : DPM++ 2M SDE\n"
+    elif sample=="LMS Karras":
+        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : LMS Karras\n"
+    elif sample=="DPM2 Karras":
+        pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM2 Karras\n"
+    elif sample=="DPM2 a Karras":
+        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM2 a Karras\n"
+    elif sample=="DPM++ 2M Karras":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 2M Karras\n"
+    elif sample=="DPM++ SDE Karras":
+        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ SDE Karras\n"
+    elif sample=="DPM++ 2M SDE Karras":
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 2M SDE Karras\n"
+    elif sample=="PLMS":
+        pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : PLMS\n"
+    elif sample=="UniPC":
+        pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : UniPC\n"
+    elif sample=="LCM":
+        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : LCM\n"
+    elif sample=="DPM++ 3M SDE":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        memo=memo+"scheduler : DPM++ 3M SDE\n"
+    elif sample=="DPM++ 3M SDE Karras":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : DPM++ 3M SDE Karras\n"
+    elif sample=="DPM++ 3M SDE Exponential":
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+        memo=memo+"scheduler : DPM++ 3M SDE Exponential\n"
+    else:
         pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : DDIM\n"
-    elif sample==2:
-        pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DDPM\n"
-    elif sample==3:
-        pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : PNDM\n"
-    elif sample==4:
-        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DPMSolverSinglestep\n"
-    elif sample==5:
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DPMSolverMultistep\n"
-    elif sample==6:
-        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : LMSDiscrete\n"
-    elif sample==7:
-        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : EulerDiscrete\n"
-    elif sample==8:
-        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : EulerAncestralDiscrete\n"
-    elif sample==9:
-        pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : HeunDiscrete\n"
-    elif sample==0:
-        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        memo=memo+"scheduler : DKDPM2AncestralDiscrete\n"
-    else:
-        memo=memo+"scheduler : original\n"
     
     memo=memo+"prompt\n"+prompt+"\n"
     memo=memo+"negative_prompt\n"+n_prompt+"\n"
@@ -593,6 +705,8 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     if loras!=[]:
         i=0
         for line in loras:
+            if line.endswith(".safetensors"):
+                line=line.replace(".safetensors","")
             pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
             print(line+".safetensors is loaded.")
             pipe.fuse_lora(lora_scale= lora_weights[i])
@@ -662,30 +776,56 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         else:
             pipe = StableDiffusionImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to(d)
             
-        if sample==1:
-            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
-        elif sample==2:
-            pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
-        elif sample==3:
-            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
-        elif sample==4:
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
-        elif sample==5:
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        elif sample==6:
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==7:
+        if sample=="Euler":
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==8:
+        elif sample=="Euler a":
             pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==9:
+        elif sample=="LMS":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Heun":
             pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
-        elif sample==0:
+        elif sample=="DPM2":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM2 a":
             pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ SDE":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M SDE":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
+        elif sample=="LMS Karras":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 Karras":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 a Karras":
+            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ SDE Karras":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M SDE Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+        elif sample=="PLMS":
+            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="UniPC":
+            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="LCM":
+            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE Karras":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 3M SDE Exponential":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+        else:
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
             
         if loras!=[]:
             i=0
             for line in loras:
+                if line.endswith(".safetensors"):
+                    line=line.replace(".safetensors","")
                 pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
                 pipe.fuse_lora(lora_scale= lora_weights[i])
                 pipe.unload_lora_weights()
