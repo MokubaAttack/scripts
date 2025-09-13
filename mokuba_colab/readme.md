@@ -51,18 +51,29 @@ mokuba_colab.text2image(<br>
   - 4 : HAMMING
   - 5 : BICUBIC
   - 6 : LANCZOS
-- sample : int ( default : 1 ) It is the scheduler type.
-  - 1 : DDIMScheduler
-  - 2 : DDPMScheduler
-  - 3 : PNDMScheduler
-  - 4 : DPMSolverSinglestepScheduler
-  - 5 : DPMSolverMultistepScheduler
-  - 6 : LMSDiscreteScheduler
-  - 7 : EulerDiscreteScheduler
-  - 8 : EulerAncestralDiscreteScheduler
-  - 9 : HeunDiscreteScheduler
-  - 0 : KDPM2AncestralDiscreteScheduler
-- seed : int ( default : 0 ) It is the seed. If you input zero, the random seeds are made.
+- sample : str ( default : "DDIM" ) It is the scheduler type.
+  - Euler a
+  - Euler
+  - LMS
+  - Heun
+  - DPM2
+  - DPM2 a
+  - DPM++ 2M
+  - DPM++ SDE
+  - DPM++ 2M SDE
+  - DPM++ 3M SDE
+  - LMS Karras
+  - DPM2 Karras
+  - DPM2 a Karras
+  - DPM++ 2M Karras
+  - DPM++ SDE Karras
+  - DPM++ 2M SDE Karras
+  - DPM++ 3M SDE Karras
+  - DDIM
+  - PLMS
+  - UniPC
+  - LCM
+- seed : int or int list ( default : 0 ) It is the seed or the seed list. If you input zero, the random seeds are made.
 - out_folder : str ( default : "data" ) It is the output folder path. If the folder doesn't exist, that is made.
 - pos_emb : str list ( default : [] ) It is the positive embedding file list.
 - neg_emb : str list ( default : [] ) It is the negative embedding file list.
