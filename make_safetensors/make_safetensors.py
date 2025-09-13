@@ -6,6 +6,10 @@ from safetensors.torch import load_file, save_file
 import FreeSimpleGUI as sg
 import os.path as osp
 import re
+from plyer import notification
+import threading
+import tkinter as tk
+import pyperclip
 
 if not(os.path.exists(os.getcwd()+"/pipecache")):
     os.mkdir(os.getcwd()+"/pipecache")
@@ -260,165 +264,170 @@ def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
 def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
-    dtype=torch.float16
-    if not(os.path.exists(base_safe)):
-        sg.popup("the ckpt file doesn't exist.",title="error")
-        return
-    pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype,cache_dir=os.getcwd()+"/pipecache")
-    pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
-    if vae_safe!="":
-        if os.path.exists(vae_safe):
-            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+    w.find_element('RUN').Update(disabled=True)
+    try:
+        dtype=torch.float16
+        if not(os.path.exists(base_safe)):
+            w.find_element('RUN').Update(disabled=False)
+            notification.notify(title="error",message="the ckpt file doesn't exist.",timeout=8)
+            return
+        pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype,cache_dir=os.getcwd()+"/pipecache")
+        pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+        if vae_safe!="":
+            if os.path.exists(vae_safe):
+                pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
 
-    ls=[]
-    ws=[]
-    if lora1!="":
-        if os.path.exists(lora1):
-            pipe.load_lora_weights(".",weight_name=lora1,torch_dtype=dtype, adapter_name="lora1")
-            ls.append("lora1")
-            if lora1w=="":
-                ws.append(1.0)
-            else:
-                try:
-                    ws.append(float(lora1w))
-                except:
-                    ws.append(1.0)
-    if lora2!="":
-        if os.path.exists(lora2):
-            pipe.load_lora_weights(".",weight_name=lora2,torch_dtype=dtype, adapter_name="lora2")
-            ls.append("lora2")
-            if lora2w=="":
-                ws.append(1.0)
-            else:
-                try:
-                    ws.append(float(lora2w))
-                except:
-                    ws.append(1.0)
-    if lora3!="":
-        if lora3!="" and os.path.exists(lora3):
-            pipe.load_lora_weights(".",weight_name=lora3,torch_dtype=dtype, adapter_name="lora3")
-            ls.append("lora3")
-            if lora3w=="":
-                ws.append(1.0)
-            else:
-                try:
-                    ws.append(float(lora3w))
-                except:
-                    ws.append(1.0)
+        if lora1!="":
+            if os.path.exists(lora1):
+                pipe.load_lora_weights(".",weight_name=lora1,torch_dtype=dtype)
+                if lora1w=="":
+                    lora1w=1.0
+                else:
+                    try:
+                        lora1w=float(lora1w)
+                    except:
+                        lora1w=1.0
+                pipe.fuse_lora(lora_scale=lora1w)
+                pipe.unload_lora_weights()
+        if lora2!="":
+            if os.path.exists(lora2):
+                pipe.load_lora_weights(".",weight_name=lora2,torch_dtype=dtype)
+                if lora2w=="":
+                    lora2w=1.0
+                else:
+                    try:
+                        lora2w=float(lora2w)
+                    except:
+                        lora2w=1.0
+                pipe.fuse_lora(lora_scale=lora2w)
+                pipe.unload_lora_weights()
+        if lora3!="":
+            if lora3!="" and os.path.exists(lora3):
+                pipe.load_lora_weights(".",weight_name=lora3,torch_dtype=dtype)
+                if lora3w=="":
+                    lora3w=1.0
+                else:
+                    try:
+                        lora3w=float(lora3w)
+                    except:
+                        lora3w=1.0
+                pipe.fuse_lora(lora_scale=lora3w)
+                pipe.unload_lora_weights()
 
-    if ls!=[]:
-        pipe.set_adapters(ls, adapter_weights=ws)
-        pipe.fuse_lora()
-        pipe.unload_lora_weights()
+        pipe.save_pretrained(os.getcwd()+"/dummy", safe_serialization=True)
 
-    pipe.save_pretrained(os.getcwd()+"/dummy", safe_serialization=True)
-    
-    model_path=os.getcwd()+"/dummy"
-    
-    # Path for safetensors
-    unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.safetensors")
-    vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.safetensors")
-    text_enc_path = osp.join(model_path, "text_encoder", "model.safetensors")
-    text_enc_2_path = osp.join(model_path, "text_encoder_2", "model.safetensors")
+        model_path=os.getcwd()+"/dummy"
 
-    # Load models from safetensors if it exists, if it doesn't pytorch
-    if osp.exists(unet_path):
-        unet_state_dict = load_file(unet_path, device="cpu")
-    else:
-        unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.bin")
-        unet_state_dict = torch.load(unet_path, map_location="cpu")
+        # Path for safetensors
+        unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.safetensors")
+        vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.safetensors")
+        text_enc_path = osp.join(model_path, "text_encoder", "model.safetensors")
+        text_enc_2_path = osp.join(model_path, "text_encoder_2", "model.safetensors")
 
-    if osp.exists(vae_path):
-        vae_state_dict = load_file(vae_path, device="cpu")
-    else:
-        vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
-        vae_state_dict = torch.load(vae_path, map_location="cpu")
+        # Load models from safetensors if it exists, if it doesn't pytorch
+        if osp.exists(unet_path):
+            unet_state_dict = load_file(unet_path, device="cpu")
+        else:
+            unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.bin")
+            unet_state_dict = torch.load(unet_path, map_location="cpu")
 
-    if osp.exists(text_enc_path):
-        text_enc_dict = load_file(text_enc_path, device="cpu")
-    else:
-        text_enc_path = osp.join(model_path, "text_encoder", "pytorch_model.bin")
-        text_enc_dict = torch.load(text_enc_path, map_location="cpu")
+        if osp.exists(vae_path):
+            vae_state_dict = load_file(vae_path, device="cpu")
+        else:
+            vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
+            vae_state_dict = torch.load(vae_path, map_location="cpu")
 
-    if osp.exists(text_enc_2_path):
-        text_enc_2_dict = load_file(text_enc_2_path, device="cpu")
-    else:
-        text_enc_2_path = osp.join(model_path, "text_encoder_2", "pytorch_model.bin")
-        text_enc_2_dict = torch.load(text_enc_2_path, map_location="cpu")
+        if osp.exists(text_enc_path):
+            text_enc_dict = load_file(text_enc_path, device="cpu")
+        else:
+            text_enc_path = osp.join(model_path, "text_encoder", "pytorch_model.bin")
+            text_enc_dict = torch.load(text_enc_path, map_location="cpu")
 
-    # Convert the UNet model
-    unet_state_dict = convert_unet_state_dict(unet_state_dict)
-    unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
+        if osp.exists(text_enc_2_path):
+            text_enc_2_dict = load_file(text_enc_2_path, device="cpu")
+        else:
+            text_enc_2_path = osp.join(model_path, "text_encoder_2", "pytorch_model.bin")
+            text_enc_2_dict = torch.load(text_enc_2_path, map_location="cpu")
 
-    # Convert the VAE model
-    vae_state_dict = convert_vae_state_dict(vae_state_dict)
-    vae_state_dict = {"first_stage_model." + k: v for k, v in vae_state_dict.items()}
+        # Convert the UNet model
+        unet_state_dict = convert_unet_state_dict(unet_state_dict)
+        unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
 
-    # Convert text encoder 1
-    text_enc_dict = convert_openai_text_enc_state_dict(text_enc_dict)
-    text_enc_dict = {"conditioner.embedders.0.transformer." + k: v for k, v in text_enc_dict.items()}
+        # Convert the VAE model
+        vae_state_dict = convert_vae_state_dict(vae_state_dict)
+        vae_state_dict = {"first_stage_model." + k: v for k, v in vae_state_dict.items()}
 
-    # Convert text encoder 2
-    text_enc_2_dict = convert_openclip_text_enc_state_dict(text_enc_2_dict)
-    text_enc_2_dict = {"conditioner.embedders.1.model." + k: v for k, v in text_enc_2_dict.items()}
-    # We call the `.T.contiguous()` to match what's done in
-    # https://github.com/huggingface/diffusers/blob/84905ca7287876b925b6bf8e9bb92fec21c78764/src/diffusers/loaders/single_file_utils.py#L1085
-    text_enc_2_dict["conditioner.embedders.1.model.text_projection"] = text_enc_2_dict.pop(
-        "conditioner.embedders.1.model.text_projection.weight"
-    ).T.contiguous()
+        # Convert text encoder 1
+        text_enc_dict = convert_openai_text_enc_state_dict(text_enc_dict)
+        text_enc_dict = {"conditioner.embedders.0.transformer." + k: v for k, v in text_enc_dict.items()}
 
-    # Put together new checkpoint
-    state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict, **text_enc_2_dict}
+        # Convert text encoder 2
+        text_enc_2_dict = convert_openclip_text_enc_state_dict(text_enc_2_dict)
+        text_enc_2_dict = {"conditioner.embedders.1.model." + k: v for k, v in text_enc_2_dict.items()}
+        # We call the `.T.contiguous()` to match what's done in
+        # https://github.com/huggingface/diffusers/blob/84905ca7287876b925b6bf8e9bb92fec21c78764/src/diffusers/loaders/single_file_utils.py#L1085
+        text_enc_2_dict["conditioner.embedders.1.model.text_projection"] = text_enc_2_dict.pop(
+            "conditioner.embedders.1.model.text_projection.weight"
+        ).T.contiguous()
 
-    float16=True
-    if float16:
-        state_dict = {k: v.half() for k, v in state_dict.items()}
+        # Put together new checkpoint
+        state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict, **text_enc_2_dict}
 
-    use_safetensors=True
-    if use_safetensors:
-        save_file(state_dict, out_safe)
-    else:
-        state_dict = {"state_dict": state_dict}
-        torch.save(state_dict, out_safe)
+        float16=True
+        if float16:
+            state_dict = {k: v.half() for k, v in state_dict.items()}
 
-    shutil.rmtree(os.getcwd()+"/dummy")
-    sg.popup(out_safe,title="fin")
-    
+        use_safetensors=True
+        if use_safetensors:
+            save_file(state_dict, out_safe)
+        else:
+            state_dict = {"state_dict": state_dict}
+            torch.save(state_dict, out_safe)
+
+        shutil.rmtree(os.getcwd()+"/dummy")
+        w.find_element('RUN').Update(disabled=False)
+        notification.notify(title="fin",message=out_safe,timeout=8)
+    except:
+        w.find_element('RUN').Update(disabled=False)
+        notification.notify(title="error",message="fail in the output.",timeout=8)
+        
+keys=[
+    'ckpt','vae','lora1','lora2','lora3',"out",'w1','w2','w3'
+]
+for key in keys:
+    grp_rclick_menu[key]=[
+        "",
+        [
+            "-copy-::"+key,"-cut-::"+key,"-paste-::"+key
+        ]
+    ]
 layout =[
     [sg.Text("checkpoint file")],
-    [sg.InputText(key='ckpt'),sg.FileBrowse('select ckpt', key="selckpt", file_types=(('ckpt file', '.safetensors'),))],
+    [sg.InputText(key='ckpt',right_click_menu=grp_rclick_menu["ckpt"]),sg.FileBrowse('select ckpt', file_types=(('ckpt file', '.safetensors'),))],
     [sg.Text("vae file")],
-    [sg.InputText(key='vae'),sg.FileBrowse('select vae', key="selvae", file_types=(('vae file', '.safetensors'),))],
+    [sg.InputText(key='vae',right_click_menu=grp_rclick_menu["vae"]),sg.FileBrowse('select vae', file_types=(('vae file', '.safetensors'),))],
     [sg.Text("lora1 file")],
-    [sg.InputText(key='lora1'),sg.FileBrowse('select lora', key="sellora1", file_types=(('lora file', '.safetensors'),))],
-    [sg.Text("weight"),sg.InputText("1.0",key='w1')],
+    [sg.InputText(key='lora1',right_click_menu=grp_rclick_menu["lora1"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
+    [sg.Text("weight"),sg.InputText("1.0",key='w1',right_click_menu=grp_rclick_menu["w1"])],
     [sg.Text("lora2 file")],
-    [sg.InputText(key='lora2'),sg.FileBrowse('select lora', key="sellora2", file_types=(('lora file', '.safetensors'),))],
-    [sg.Text("weight"),sg.InputText("1.0",key='w2')],
+    [sg.InputText(key='lora2',right_click_menu=grp_rclick_menu["lora2"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
+    [sg.Text("weight"),sg.InputText("1.0",key='w2',right_click_menu=grp_rclick_menu["w2"])],
     [sg.Text("lora3 file")],
-    [sg.InputText(key='lora3'),sg.FileBrowse('select lora', key="sellora3", file_types=(('lora file', '.safetensors'),))],
-    [sg.Text("weight"),sg.InputText("1.0",key='w3')],
+    [sg.InputText(key='lora3',right_click_menu=grp_rclick_menu["lora3"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
+    [sg.Text("weight"),sg.InputText("1.0",key='w3',right_click_menu=grp_rclick_menu["w3"])],
     [sg.Text("out file")],
-    [sg.InputText(key='out'),sg.Button('select out', key="selout")],
-    [sg.Button('Exit'),sg.Button('Run')]
-        ]
+    [sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
+    [sg.Button('RUN'),sg.Button('EXIT')]
+]
 
 window = sg.Window('make safetensors', layout)
 
 while True:
     event, values = window.read()
-    if event in (sg.WIN_CLOSED, 'Exit'):
+    if event in (sg.WIN_CLOSED, 'EXIT'):
         break
-    elif event=="selout":
-        file_path = sg.popup_get_file(
-            "select output file",
-            multiple_files = False,
-            save_as=True,
-            file_types=(("ckpt file", "*.safetensors"),),
-        )
-        window['out'].update(file_path)
 
-    elif event=="Run":
+    elif event=="RUN":
         base_safe=values["ckpt"]
         vae_safe=values["vae"]
         out_safe=values["out"]
@@ -429,9 +438,32 @@ while True:
         lora2w=values["w2"]
         lora3w=values["w3"]
         if base_safe!="" and out_safe!="":
-            try:
-                run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w)
-            except:
-                sg.popup("fail in the output.",title="error")
+            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w))
+            thread1.start()
+                
+    elif "-copy-" in event:
+        try:
+            key=event.replace("-copy-::","")
+            selected = window[key].widget.selection_get()
+            pyperclip.copy(selected)
+        except:
+            pass
+    elif "-cut-" in event:
+        try:
+            key=event.replace("-cut-::","")
+            selected = window[key].widget.selection_get()
+            pyperclip.copy(selected)
+            window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+        except:
+            pass
+    elif "-paste-" in event:
+        try:
+            key=event.replace("-paste-::","")
+            selected = pyperclip.paste()
+            insert_pos = window[key].widget.index("insert")
+            window[key].Widget.insert(insert_pos, selected)
+            window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+        except:
+            pass
             
 window.close()
