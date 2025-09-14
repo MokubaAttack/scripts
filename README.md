@@ -15,3 +15,5 @@ It is a script that burns a vae and loras in a checkpoint. This script is based 
 It is a script that merge checkpoints.
 ## [MergeLoraBySVD](https://github.com/MokubaAttack/scripts/tree/main/MergeLoraBySVD)
 I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module.
+## [plus_metadata](https://github.com/MokubaAttack/scripts/tree/main/plus_metadata)
+It is a script that write metadata to PNG file. That metadata is recognized in CivitAi.
