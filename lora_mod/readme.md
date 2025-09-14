@@ -3,13 +3,10 @@ When the message "ValueError: Checkpoint not supported because layer lora_unet_l
 ## requirements
 python modules
 ```
-pip install safetensors==0.5.3
-pip install torch==2.7.1
-pip install numpy==2.3.2
-pip install FreeSimpleGUI==5.2.0.post1
+pip install safetensors torch numpy
 ```
 ## how to use
-1. run this script.
-2. select the lora file ( .safetensors file ).
-3. click run button.
-4. a file that ".safetensor" of the checkpoint file turn into "_mod.safetensors" is made.
+1. input next command.
+   python lora_mod.py lora.safetensors
+   lora.safetensors is the lora file.   
+2. a file that ".safetensor" of the lora file turn into "_mod.safetensors" is made.
