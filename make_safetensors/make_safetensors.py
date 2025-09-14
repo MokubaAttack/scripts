@@ -394,6 +394,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
 keys=[
     'ckpt','vae','lora1','lora2','lora3',"out",'w1','w2','w3'
 ]
+grp_rclick_menu={}
 for key in keys:
     grp_rclick_menu[key]=[
         "",
