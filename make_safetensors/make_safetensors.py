@@ -263,7 +263,7 @@ def convert_openclip_text_enc_state_dict(text_enc_dict):
 def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
-def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w):
+def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w):
     w.find_element('RUN').Update(disabled=True)
     try:
         dtype=torch.float16
@@ -439,7 +439,7 @@ while True:
         lora2w=values["w2"]
         lora3w=values["w3"]
         if base_safe!="" and out_safe!="":
-            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w))
+            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window))
             thread1.start()
                 
     elif "-copy-" in event:
