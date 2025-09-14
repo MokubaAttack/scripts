@@ -3,11 +3,7 @@ It is a script that makes a embedding from text.
 ## requirements
 python modules
 ```
-pip install diffusers==0.34.0
-pip install torch==2.7.1
-pip install FreeSimpleGUI==5.2.0.post1
-pip install transformers==4.55.0
-pip install accelerate==1.10.0
+pip install diffusers torch FreeSimpleGUI transformers accelerate
 ```
 ## How to use
 1. Run this script.
