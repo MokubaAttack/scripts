@@ -7,15 +7,15 @@ import pyperclip
 from plyer import notification
 import threading
 
-def mergeckpt(ckpts,weights,v,out_path,w):
-    w.find_element('RUN').Update(disabled=True)
+def mergeckpt(ckpts,weights,v,out_path,win):
+    win.find_element('RUN').Update(disabled=True)
     if not(out_path.endswith(".safetensors")):
-        w.find_element('RUN').Update(disabled=False)
+        win.find_element('RUN').Update(disabled=False)
         notification.notify(title="error",message=path+" does not exist.",timeout=8)
         return
     for path in ckpts:
         if not(os.path.exists(path)):
-            w.find_element('RUN').Update(disabled=False)
+            win.find_element('RUN').Update(disabled=False)
             notification.notify(title="error",message="I failed in the output.",timeout=8)
             return
     try:
@@ -54,10 +54,10 @@ def mergeckpt(ckpts,weights,v,out_path,w):
             f.write("vae : None\n")
         f.close()
         del out_dict,state_dict
-        w.find_element('RUN').Update(disabled=False)
+        win.find_element('RUN').Update(disabled=False)
         notification.notify(title="fin",message=out_path,timeout=8)
     except:
-        w.find_element('RUN').Update(disabled=False)
+        win.find_element('RUN').Update(disabled=False)
         notification.notify(title="error",message="I failed in the output.",timeout=8)
         
 keys=[
