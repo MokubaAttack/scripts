@@ -1,4 +1,4 @@
-from diffusers import StableDiffusionXLPipeline,AutoencoderKL,DDIMScheduler
+from diffusers import StableDiffusionXLPipeline,AutoencoderKL
 import torch
 import shutil
 import os
@@ -10,7 +10,43 @@ from plyer import notification
 import threading
 import tkinter as tk
 import pyperclip
+from diffusers import EulerDiscreteScheduler
+from diffusers import EulerAncestralDiscreteScheduler
+from diffusers import LMSDiscreteScheduler
+from diffusers import HeunDiscreteScheduler
+from diffusers import KDPM2DiscreteScheduler
+from diffusers import KDPM2AncestralDiscreteScheduler
+from diffusers import DPMSolverMultistepScheduler
+from diffusers import DPMSolverSinglestepScheduler
+from diffusers import PNDMScheduler
+from diffusers import UniPCMultistepScheduler
+from diffusers import LCMScheduler
+from diffusers import DDIMScheduler
+from diffusers import DPMSolverSDEScheduler
 
+choices=[
+    "Euler a",
+    "Euler",
+    "LMS",
+    "Heun",
+    "DPM2",
+    "DPM2 a",
+    "DPM++ 2M",
+    "DPM++ SDE",
+    "DPM++ 2M SDE",
+    "DPM++ 3M SDE",
+    "LMS Karras",
+    "DPM2 Karras",
+    "DPM2 a Karras",
+    "DPM++ 2M Karras",
+    "DPM++ SDE Karras",
+    "DPM++ 2M SDE Karras",
+    "DPM++ 3M SDE Karras",
+    "DDIM",
+    "PLMS",
+    "UniPC",
+    "LCM"
+]
 if not(os.path.exists(os.getcwd()+"/pipecache")):
     os.mkdir(os.getcwd()+"/pipecache")
     
@@ -263,7 +299,7 @@ def convert_openclip_text_enc_state_dict(text_enc_dict):
 def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
-def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w):
+def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w,sample):
     w.find_element('RUN').Update(disabled=True)
     try:
         dtype=torch.float16
@@ -272,7 +308,52 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w):
             notification.notify(title="error",message="the ckpt file doesn't exist.",timeout=8)
             return
         pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype,cache_dir=os.getcwd()+"/pipecache")
-        pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+        
+        if sample=="Euler":
+            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Euler a":
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="LMS":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Heun":
+            pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM2":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM2 a":
+            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ SDE":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 2M SDE":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
+        elif sample=="LMS Karras":
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 Karras":
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM2 a Karras":
+            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ SDE Karras":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 2M SDE Karras":
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+        elif sample=="PLMS":
+            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="UniPC":
+            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sample=="LCM":
+            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        elif sample=="DPM++ 3M SDE Karras":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="DPM++ 3M SDE Exponential":
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+        else:
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+        
         if vae_safe!="":
             if os.path.exists(vae_safe):
                 pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
@@ -416,6 +497,7 @@ layout =[
     [sg.Text("lora3 file")],
     [sg.InputText(key='lora3',right_click_menu=grp_rclick_menu["lora3"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
     [sg.Text("weight"),sg.InputText("1.0",key='w3',right_click_menu=grp_rclick_menu["w3"])],
+    [sg.Text("Sampler"), sg.Combo(default_value="DDIM",values=choices,key="sa")],
     [sg.Text("out file")],
     [sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
     [sg.Button('RUN'),sg.Button('EXIT')]
@@ -438,8 +520,9 @@ while True:
         lora1w=values["w1"]
         lora2w=values["w2"]
         lora3w=values["w3"]
+        sample=values["sa"]
         if base_safe!="" and out_safe!="":
-            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window))
+            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window,sample))
             thread1.start()
                 
     elif "-copy-" in event:
