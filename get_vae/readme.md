@@ -3,7 +3,7 @@ It is a script that extracts a vae safetensors from a checkpoint safetensors. I'
 ## requirements
 python modules
 ```
-pip install torch numpy safetensors
+pip install torch numpy safetensors FreeSimpleGUI
 ```
 ## how to use
 1. input next command.
