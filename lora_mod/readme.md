@@ -3,7 +3,7 @@ When the message "ValueError: Checkpoint not supported because layer lora_unet_l
 ## requirements
 python modules
 ```
-pip install safetensors torch numpy
+pip install safetensors torch numpy FreeSimpleGUI
 ```
 ## how to use
 1. input next command.
