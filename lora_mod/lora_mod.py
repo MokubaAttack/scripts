@@ -1,7 +1,9 @@
 from safetensors.torch import load_file,save_file
 import sys
 import os
+import FreeSimpleGUI as sg
 
+sg.theme('GrayGrayGray')
 ok=[
     "lora_unet_out_2.alpha",
     "lora_unet_out_2.lora_down.weight",
@@ -26,8 +28,9 @@ ok=[
 try:
     path = sys.argv[1]
 except:
-    path = 1
-if path!=1:
+    path = sg.popup_get_file('lora file',title="modify lora")
+    
+if path!=None:
     if path.endswith(".safetensors"):
         try:
             state_dict=load_file(path)
