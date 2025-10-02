@@ -1,12 +1,15 @@
 import os,sys
 import torch
 from safetensors.torch import load_file,save_file
+import FreeSimpleGUI as sg
 
+sg.theme('GrayGrayGray')
 try:
     path = sys.argv[1]
 except:
-    path = 1
-if path!=1:
+    path = sg.popup_get_file('ckpt file',title="get vae")
+
+if path!=None:
     if path.endswith(".safetensors"):
         try:
             key="first_stage_model."
@@ -20,4 +23,5 @@ if path!=1:
                     out_dict[k_out]=w.to(torch.float16)
             save_file(out_dict,out)
         except:
-            print(path+" is failed.")
+            sg.popup(path+" is failed.",title="error")
+
