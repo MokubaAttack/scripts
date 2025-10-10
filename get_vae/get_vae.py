@@ -24,4 +24,3 @@ if path!=None:
             save_file(out_dict,out)
         except:
             sg.popup(path+" is failed.",title="error")
-
