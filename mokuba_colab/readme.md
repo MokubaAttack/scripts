@@ -83,3 +83,4 @@ mokuba_colab.text2image(<br>
   
 Output files are images( name : (index)_(the seed).png ) and the logfile. The logfile is writen input parameters.
 ## my own workflow
+![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
