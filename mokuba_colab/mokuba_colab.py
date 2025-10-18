@@ -607,15 +607,7 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     dtype=torch.float16
     if os.path.isfile(vae_safe):
         pipe = StableDiffusionPipeline.from_single_file(base_safe, torch_dtype=dtype)
-        try:
-            v=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-            pipe.vae=v
-        except:
-            v=pipe.vae
-            vae_dict=load_file(vae_safe)
-            for k,w in v.named_parameters():
-                w.data=vae_dict[k].to(dtype)
-            pipe.vae=v
+        pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
         pipe.to("cuda:0")
     else:
         pipe = StableDiffusionPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda:0")
@@ -734,7 +726,11 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     pipe.enable_vae_tiling()
     pipe.enable_xformers_memory_efficient_attention()
     
-    comple = Compel(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder)
+    comple = Compel(
+        truncate_long_prompts=False,
+        tokenizer=pipe.tokenizer,
+        text_encoder=pipe.text_encoder
+    )
     prompt_comple=comple(prompt)
     n_prompt_comple=comple(n_prompt)
     del comple
@@ -745,7 +741,17 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     images=[]
     for i in range(pic_number):
         if prog_ver==2 or prog_ver==1:
-            image = pipe(eta=1.0,prompt_embeds=prompt_comple,negative_prompt_embeds=n_prompt_comple,height=tate[0], width=yoko[0],guidance_scale=gs, num_inference_steps=f_step,clip_skip=cs,generator=torch.manual_seed(seed[i])).images[0]
+            image = pipe(
+                eta=1.0,
+                prompt_embeds=prompt_comple,
+                negative_prompt_embeds=n_prompt_comple,
+                height=tate[0],
+                width=yoko[0],
+                guidance_scale=gs,
+                num_inference_steps=f_step,
+                clip_skip=cs,
+                generator=torch.manual_seed(seed[i])
+            ).images[0]
             if prog_ver==2:
                 image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
                 images.append(image0)
@@ -757,14 +763,24 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                 del image,image0
                 torch.cuda.empty_cache()
         else:
-            image = pipe(eta=1.0,prompt_embeds=prompt_comple,negative_prompt_embeds=n_prompt_comple,height=tate[1], width=yoko[1],guidance_scale=gs, num_inference_steps=step,clip_skip=cs,generator=torch.manual_seed(seed[i])).images[0]
+            image = pipe(
+                eta=1.0,
+                prompt_embeds=prompt_comple,
+                negative_prompt_embeds=n_prompt_comple,
+                height=tate[1],
+                width=yoko[1],
+                guidance_scale=gs,
+                num_inference_steps=step,
+                clip_skip=cs,
+                generator=torch.manual_seed(seed[i])
+            ).images[0]
             image.save(out_folder+"/"+str(i)+"_"+str(seed[i])+".png")
             print(str(i)+"_"+str(seed[i])+".png")
             display(image)
             del image
             torch.cuda.empty_cache()
 
-    del pipe
+    del pipe,prompt_comple,n_prompt_comple
 
     if prog_ver==2 or prog_ver==1:
         if torch.cuda.device_count()==1:
@@ -772,7 +788,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         else:
             d="cuda:1"
         if os.path.isfile(vae_safe):
-            pipe = StableDiffusionImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype,vae=v).to(d)
+            pipe = StableDiffusionImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
+            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+            pipe.to(d)
         else:
             pipe = StableDiffusionImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to(d)
             
@@ -850,19 +868,43 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         pipe.enable_vae_tiling()
         pipe.enable_xformers_memory_efficient_attention()
         
-        comple = Compel(tokenizer=pipe.tokenizer, text_encoder=pipe.text_encoder)
+        comple = Compel(
+            truncate_long_prompts=False,
+            tokenizer=pipe.tokenizer,
+            text_encoder=pipe.text_encoder
+        )
         prompt_comple=comple(prompt)
         n_prompt_comple=comple(n_prompt)
         del comple
 
         for i in range(pic_number):
             if prog_ver==2:
-                image = pipe(eta=1.0,prompt_embeds=prompt_comple,negative_prompt_embeds=n_prompt_comple,image=images[i],guidance_scale=gs,generator=torch.manual_seed(seed[i]), num_inference_steps=int((step+f_step)/2/ss)+1,clip_skip=cs,strength=ss).images[0]
+                image = pipe(
+                    eta=1.0,
+                    prompt_embeds=prompt_comple,
+                    negative_prompt_embeds=n_prompt_comple,
+                    image=images[i],
+                    guidance_scale=gs,
+                    generator=torch.manual_seed(seed[i]),
+                    num_inference_steps=int((step+f_step)/2/ss)+1,
+                    clip_skip=cs,
+                    strength=ss
+                ).images[0]
                 image0=image.resize((yoko[1], tate[1]), resample=p)
                 images[i]=image0
                 del image,image0
                 torch.cuda.empty_cache()
-            image = pipe(eta=1.0,prompt_embeds=prompt_comple,negative_prompt_embeds=n_prompt_comple,image=images[i],guidance_scale=gs,generator=torch.manual_seed(seed[i]), num_inference_steps=int(step/ss)+1,clip_skip=cs,strength=ss).images[0]
+            image = pipe(
+                eta=1.0,
+                prompt_embeds=prompt_comple,
+                negative_prompt_embeds=n_prompt_comple,
+                image=images[i],
+                guidance_scale=gs,
+                generator=torch.manual_seed(seed[i]),
+                num_inference_steps=int(step/ss)+1,
+                clip_skip=cs,
+                strength=ss
+            ).images[0]
             image.save(out_folder+"/"+str(i)+"_"+str(seed[i])+".png")
             print(str(i)+"_"+str(seed[i])+".png")
             display(image)
@@ -870,6 +912,4 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             torch.cuda.empty_cache()
         del pipe,prompt_comple,n_prompt_comple
     del images
-    if "v" in locals():
-        del v
-    return seeds
+    return seed
