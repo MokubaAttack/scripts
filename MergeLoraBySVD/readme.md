@@ -1,12 +1,12 @@
 # MergeLoraBySVD
-I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module.
+I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. <mark>I make it to run by one file, and metadata to be baked in output file.</mark>
 ## requirements
 python modules
 ```
 pip install opencv-contrib-python torch diffusers torchvision accelerate toml transformers einops imagesize
 ```
-github repository  
-[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
+~~github repository  
+[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)~~
 ## setup
 1. App path of sd-scripts directory to system path.
 2. Save MergeLoraBySVD to sd-scripts directory or current directory.
@@ -45,9 +45,9 @@ github repository
 &nbsp;&nbsp;&nbsp;&nbsp;
 **device=None,**  
 &nbsp;&nbsp;&nbsp;&nbsp;
-#When you input True, it do not save sai modelspec metadata. ( minimum ss_metadata for LoRA is saved. )  
+~~#When you input True, it do not save sai modelspec metadata. ( minimum ss_metadata for LoRA is saved. )~~  
 &nbsp;&nbsp;&nbsp;&nbsp;
-**no_metadata=True,**  
+**~~no_metadata=True,~~**  
 &nbsp;&nbsp;&nbsp;&nbsp;
 #filename of output  
 &nbsp;&nbsp;&nbsp;&nbsp;
