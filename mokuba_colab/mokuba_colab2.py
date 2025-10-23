@@ -10,7 +10,7 @@ import datetime
 import ast
 from PIL import Image
 from PIL import PngImagePlugin
-from IPython.display import display
+from IPython.display import display,clear_output
 from compel import CompelForSD,CompelForSDXL
 from diffusers import EulerDiscreteScheduler
 from diffusers import EulerAncestralDiscreteScheduler
@@ -70,7 +70,6 @@ def plus_meta(vs,img):
 def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", prog_ver=2, pic_number=10, gs=7,f_step=10, step=30, ss=0.6, cs=1, Interpolation=3, sample="DDIM",seed=0,out_folder="data",pos_emb=[],neg_emb=[],base_safe="base.safetensors",vae_safe="vae.safetensors"):
     meta_dict={}
     memo="seed\n"
-    print("seed")
     if isinstance(seed, list):
         pic_number=len(seed)
         for i in range(pic_number):
@@ -81,7 +80,6 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
                     seed[i]=int(seed[i])
             except:
                 seed[i]=random.randint(1, 1000000000)
-            print(seed[i])
             memo=memo+str(seed[i])+"\n"
     else:
         try:
@@ -97,8 +95,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             for i in range(pic_number):
                 seed.append(random.randint(1, 1000000000))
         for i in range(pic_number):
-            print(seed[i])
             memo=memo+str(seed[i])+"\n"
+    clear_output(True)
+    print(memo)
             
     if prog_ver!=1:
         if prog_ver!=2:
@@ -107,7 +106,6 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
     if not(os.path.isfile(base_safe)):
         print("the checkpoint file does not exist.")
         return []
-    print("checkpoint : "+base_safe)
     memo=memo+"checkpoint : "+base_safe+"\n"
     try:
         f=safetensors.safe_open(base_safe, framework="pt", device="cpu")
@@ -115,9 +113,10 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         del f
     except:
         meta_dict["ckpt"]=""
+    clear_output(True)
+    print(memo)
     
     if os.path.isfile(vae_safe):
-        print("vae : "+vae_safe)
         memo=memo+"vae : "+vae_safe+"\n"
         try:
             f=safetensors.safe_open(vae_safe, framework="pt", device="cpu")
@@ -126,16 +125,16 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         except:
             meta_dict["vae"]=""
     else:
-        print("vae : normal vae")
-        memo=memo+"vae : normal vae"+"\n"
+        memo=memo+"vae : original vae"+"\n"
         meta_dict["vae"]=""
+    clear_output(True)
+    print(memo)
+
     if loras!=[]:    
         if len(loras)!=len(lora_weights):
             print("the number of lora does not equal the number of lora weight.")
             return []
-
         i=0
-        print("lora : weight")
         memo=memo+"lora : weight\n"
         meta_id_list=[]
         meta_weight_list=[]
@@ -143,35 +142,37 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             if line.endswith(".safetensors"):
                 line=line.replace(".safetensors","")
             if os.path.isfile(line+".safetensors"):
-                print(line+".safetensors : "+str(lora_weights[i])+" ok")
-                memo=memo+line+".safetensors : "+str(lora_weights[i])+"\n"
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ok\n"
+                clear_output(True)
+                print(memo)
                 list1=meta_id_list
                 list2=meta_weight_list
                 try:
                     f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
-                    meta_id=f.metadata()["id"]
+                    d=f.metadata()
+                    meta_id=d["id"]
                     if "," in meta_id:
                         meta_id = meta_id.split(",")
                         for j in meta_id:
-                            meta_id_list.append(j)
+                            meta_id_list.append(int(j))
                     else:
-                        meta_id_list.append(meta_id)
-                    del meta_id
-                    meta_weight=f.metadata()["weight"]
+                        meta_id_list.append(int(meta_id))
+                    meta_weight=d["weight"]
                     if "," in meta_weight:
                         meta_weight = meta_weight.split(",")
                         for j in meta_weight:
                             meta_weight_list.append(float(j)*lora_weights[i])
                     else:
                         meta_weight_list.append(float(meta_weight)*lora_weights[i])
-                    del meta_weight
-                    del f
+                    del f,d
                 except:
                     meta_id_list=list1
                     meta_weight_list=list2
                 
             else:
-                print(line+".safetensors : "+str(lora_weights[i])+" ng")
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ng"
+                clear_output(True)
+                print(memo)
                 return []
             i=i+1
 
@@ -182,16 +183,13 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         meta_dict["w"]=str(meta_weight_list)
     
     meta_embed_list=[]
-    print("Positive Embedding")
     memo=memo+"Positive Embedding\n"
     if pos_emb==[]:
-        print("nothing")
         memo=memo+"nothing\n"
     else:
         for line in pos_emb:
             if os.path.isfile(line):
-                print(line+" ok")
-                memo=memo+line+"\n"
+                memo=memo+line+" ok\n"
                 list1=meta_embed_list
                 try:
                     f=safetensors.safe_open(line, framework="pt", device="cpu")
@@ -201,19 +199,20 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
                     meta_embed_list=list1
                 
             else:
-                print(line+" ng")
+                memo=memo+line+" ng"
+                clear_output(True)
+                print(memo)
                 return []
+    clear_output(True)
+    print(memo)
                 
-    print("Negative Embedding")
     memo=memo+"Negative Embedding\n"
     if neg_emb==[]:
-        print("nothing")
         memo=memo+"nothing\n"
     else:
         for line in neg_emb:
             if os.path.isfile(line):
-                print(line+" ok")
-                memo=memo+line+"\n"
+                memo=memo+line+" ok\n"
                 list1=meta_embed_list
                 try:
                     f=safetensors.safe_open(line, framework="pt", device="cpu")
@@ -222,8 +221,12 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
                 except:
                     meta_embed_list=list1
             else:
-                print(line+" ng")
+                memo=memo+line+" ng"
+                clear_output(True)
+                print(memo)
                 return []
+    clear_output(True)
+    print(memo)
     meta_dict["embed"]=str(meta_embed_list)
 
     if t=="v":
@@ -286,6 +289,8 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             meta_dict["hum"]="LANCZOS"
     else:
         meta_dict["hum"]=""
+    clear_output(True)
+    print(memo)
 
     del t,Interpolation
 
@@ -404,6 +409,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         meta_dict["hs"]=""
         meta_dict["ds"]=""
         meta_dict["hu"]=""
+
+    clear_output(True)
+    print(memo)
     
     if loras!=[]:
         i=0
@@ -411,7 +419,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             if line.endswith(".safetensors"):
                 line=line.replace(".safetensors","")
             pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
-            print(line+".safetensors is loaded.")
+            memo=memo+line+".safetensors is loaded.\n"
+            clear_output(True)
+            print(memo)
             pipe.fuse_lora(lora_scale= lora_weights[i])
             pipe.unload_lora_weights()
             i=i+1
@@ -424,7 +434,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
             del state_dict
             prompt = prompt+","+key
-            print(line+" is loaded.")
+            memo=memo+line+" is loaded.\n"
+            clear_output(True)
+            print(memo)
 
     if neg_emb!=[]:
         for line in neg_emb:
@@ -434,19 +446,16 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
             del state_dict
             n_prompt=n_prompt+","+key
-            print(line+" is loaded.")
+            memo=memo+line+" is loaded.\n"
+            clear_output(True)
+            print(memo)
     
     memo=memo+"prompt\n"+prompt+"\n"
     memo=memo+"negative_prompt\n"+n_prompt+"\n"
     meta_dict["pr"]=prompt
     meta_dict["ne"]=n_prompt
-
-    dt_now = datetime.datetime.now()
-    dt_now=dt_now.strftime('%Y-%m-%d-%H-%M-%S')+".txt"
-    logfile=open(out_folder+"/"+dt_now,"w")
-    logfile.write(memo)
-    logfile.close()
-    del dt_now,logfile
+    clear_output(True)
+    print(memo)
 
     pipe.enable_vae_tiling()
     pipe.enable_xformers_memory_efficient_attention()
@@ -591,6 +600,9 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
                 pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
                 del state_dict
 
+        clear_output(True)
+        print(memo)
+
         pipe.enable_vae_tiling()
         pipe.enable_xformers_memory_efficient_attention()
                 
@@ -644,7 +656,6 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
 def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", prog_ver=2, pic_number=10, gs=7, f_step=10,step=30, ss=0.6, cs=2, Interpolation=3, sample=1,seed=0,out_folder="data",pos_emb=[],neg_emb=[],base_safe="base.safetensors",vae_safe="vae.safetensors"):
     meta_dict={}
     memo="seed\n"
-    print("seed")
     if isinstance(seed, list):
         pic_number=len(seed)
         for i in range(pic_number):
@@ -655,7 +666,6 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                     seed[i]=int(seed[i])
             except:
                 seed[i]=random.randint(1, 1000000000)
-            print(seed[i])
             memo=memo+str(seed[i])+"\n"
     else:
         try:
@@ -671,8 +681,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             for i in range(pic_number):
                 seed.append(random.randint(1, 1000000000))
         for i in range(pic_number):
-            print(seed[i])
             memo=memo+str(seed[i])+"\n"
+    clear_output(True)
+    print(memo)
             
     if prog_ver!=1:
         if prog_ver!=2:
@@ -681,7 +692,6 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
     if not(os.path.isfile(base_safe)):
         print("the checkpoint file does not exist.")
         return []
-    print("checkpoint : "+base_safe)
     memo=memo+"checkpoint : "+base_safe+"\n"
     try:
         f=safetensors.safe_open(base_safe, framework="pt", device="cpu")
@@ -689,9 +699,10 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         del f
     except:
         meta_dict["ckpt"]=""
+    clear_output(True)
+    print(memo)
     
     if os.path.isfile(vae_safe):
-        print("vae : "+vae_safe)
         memo=memo+"vae : "+vae_safe+"\n"
         try:
             f=safetensors.safe_open(vae_safe, framework="pt", device="cpu")
@@ -700,16 +711,16 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         except:
             meta_dict["vae"]=""
     else:
-        print("vae : normal vae")
-        memo=memo+"vae : normal vae"+"\n"
+        memo=memo+"vae : original vae"+"\n"
         meta_dict["vae"]=""
+    clear_output(True)
+    print(memo)
+
     if loras!=[]:    
         if len(loras)!=len(lora_weights):
             print("the number of lora does not equal the number of lora weight.")
             return []
-
         i=0
-        print("lora : weight")
         memo=memo+"lora : weight\n"
         meta_id_list=[]
         meta_weight_list=[]
@@ -717,35 +728,37 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             if line.endswith(".safetensors"):
                 line=line.replace(".safetensors","")
             if os.path.isfile(line+".safetensors"):
-                print(line+".safetensors : "+str(lora_weights[i])+" ok")
-                memo=memo+line+".safetensors : "+str(lora_weights[i])+"\n"
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ok\n"
+                clear_output(True)
+                print(memo)
                 list1=meta_id_list
                 list2=meta_weight_list
                 try:
                     f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
-                    meta_id=f.metadata()["id"]
+                    d=f.metadata()
+                    meta_id=d["id"]
                     if "," in meta_id:
                         meta_id = meta_id.split(",")
                         for j in meta_id:
-                            meta_id_list.append(j)
+                            meta_id_list.append(int(j))
                     else:
-                        meta_id_list.append(meta_id)
-                    del meta_id
-                    meta_weight=f.metadata()["weight"]
+                        meta_id_list.append(int(meta_id))
+                    meta_weight=d["weight"]
                     if "," in meta_weight:
                         meta_weight = meta_weight.split(",")
                         for j in meta_weight:
                             meta_weight_list.append(float(j)*lora_weights[i])
                     else:
                         meta_weight_list.append(float(meta_weight)*lora_weights[i])
-                    del meta_weight
-                    del f
+                    del f,d
                 except:
                     meta_id_list=list1
                     meta_weight_list=list2
                 
             else:
-                print(line+".safetensors : "+str(lora_weights[i])+" ng")
+                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ng"
+                clear_output(True)
+                print(memo)
                 return []
             i=i+1
 
@@ -756,16 +769,13 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         meta_dict["w"]=str(meta_weight_list)
     
     meta_embed_list=[]
-    print("Positive Embedding")
     memo=memo+"Positive Embedding\n"
     if pos_emb==[]:
-        print("nothing")
         memo=memo+"nothing\n"
     else:
         for line in pos_emb:
             if os.path.isfile(line):
-                print(line+" ok")
-                memo=memo+line+"\n"
+                memo=memo+line+" ok\n"
                 list1=meta_embed_list
                 try:
                     f=safetensors.safe_open(line, framework="pt", device="cpu")
@@ -775,19 +785,20 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                     meta_embed_list=list1
                 
             else:
-                print(line+" ng")
+                memo=memo+line+" ng"
+                clear_output(True)
+                print(memo)
                 return []
+    clear_output(True)
+    print(memo)
                 
-    print("Negative Embedding")
     memo=memo+"Negative Embedding\n"
     if neg_emb==[]:
-        print("nothing")
         memo=memo+"nothing\n"
     else:
         for line in neg_emb:
             if os.path.isfile(line):
-                print(line+" ok")
-                memo=memo+line+"\n"
+                memo=memo+line+" ok\n"
                 list1=meta_embed_list
                 try:
                     f=safetensors.safe_open(line, framework="pt", device="cpu")
@@ -796,8 +807,12 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                 except:
                     meta_embed_list=list1
             else:
-                print(line+" ng")
+                memo=memo+line+" ng"
+                clear_output(True)
+                print(memo)
                 return []
+    clear_output(True)
+    print(memo)
     meta_dict["embed"]=str(meta_embed_list)
 
     if t=="v":
@@ -860,6 +875,8 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             meta_dict["hum"]="LANCZOS"
     else:
         meta_dict["hum"]=""
+    clear_output(True)
+    print(memo)
 
     del t,Interpolation
 
@@ -978,6 +995,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         meta_dict["hs"]=""
         meta_dict["ds"]=""
         meta_dict["hu"]=""
+
+    clear_output(True)
+    print(memo)
         
     if loras!=[]:
         i=0
@@ -985,7 +1005,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             if line.endswith(".safetensors"):
                 line=line.replace(".safetensors","")
             pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
-            print(line+".safetensors is loaded.")
+            memo=memo+line+".safetensors is loaded.\n"
+            clear_output(True)
+            print(memo)
             pipe.fuse_lora(lora_scale= lora_weights[i])
             pipe.unload_lora_weights()
             i=i+1
@@ -995,26 +1017,26 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             key=os.path.basename(line).replace(".safetensors","")
             pipe.load_textual_inversion(".", weight_name=line, token=key)
             prompt = prompt+","+key
-            print(line+" is loaded.")
+            memo=memo+line+" is loaded.\n"
+            clear_output(True)
+            print(memo)
 
     if neg_emb!=[]:
         for line in neg_emb:
             key=os.path.basename(line).replace(".safetensors","")
             pipe.load_textual_inversion(".", weight_name=line, token=key)
             n_prompt=n_prompt+","+key
-            print(line+" is loaded.")
+            memo=memo+line+" is loaded.\n"
+            clear_output(True)
+            print(memo)
 
     memo=memo+"prompt\n"+prompt+"\n"
     memo=memo+"negative_prompt\n"+n_prompt+"\n"
     meta_dict["pr"]=prompt
     meta_dict["ne"]=n_prompt
 
-    dt_now = datetime.datetime.now()
-    dt_now=dt_now.strftime('%Y-%m-%d-%H-%M-%S')+".txt"
-    logfile=open(out_folder+"/"+dt_now,"w")
-    logfile.write(memo)
-    logfile.close()
-    del dt_now,logfile
+    clear_output(True)
+    print(memo)
         
     pipe.enable_vae_tiling()
     pipe.enable_xformers_memory_efficient_attention()
@@ -1150,6 +1172,9 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                 key=os.path.basename(line).replace(".safetensors","")
                 pipe.load_textual_inversion(".", weight_name=line, token=key)
                 n_prompt=n_prompt+","+key
+
+        clear_output(True)
+        print(memo)
             
         pipe.enable_vae_tiling()
         pipe.enable_xformers_memory_efficient_attention()
