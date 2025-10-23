@@ -373,7 +373,8 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
             merged_lora_sd[lora_module_name + ".lora_up.weight"] = up_weight.to("cpu").contiguous()
             merged_lora_sd[lora_module_name + ".lora_down.weight"] = down_weight.to("cpu").contiguous()
             merged_lora_sd[lora_module_name + ".alpha"] = torch.tensor(module_new_rank, device="cpu")
-
+    if win==None:
+        print("\n")
     return merged_lora_sd
 
 def merge(
