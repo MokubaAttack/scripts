@@ -88,5 +88,5 @@ The metadata is read in CivitAi.</mark>
 ![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
 ## mokuba_diffusers
 mokuba_diffusers.ipynb is a file of Google Colab. It is rewritten from code that I use usually.  
-You need to input CivitAi's token in "civitai" of the secret key.
+You need to input CivitAi's token in "civitai" of the secret key.  
 Please use it.
