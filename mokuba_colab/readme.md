@@ -86,3 +86,6 @@ Output files are images( name : (index)_(the seed).png ) ~~and the logfile. The 
 The metadata is read in CivitAi.</mark>
 ## my own workflow
 ![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
+## mokuba_diffusers
+mokuba_diffusers.ipynb is a file of Google Colab. It is rewritten from code that I use usually.  
+Please use it.
