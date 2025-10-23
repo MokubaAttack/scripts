@@ -2,9 +2,9 @@
 I make My Own Modules from the workflow that I use whenever I make images. My workflow is based on Hires.fix. That works on Google Colab and Kaggle by torch.float16. And that doesn't work for Flux.<br>
 ## requirements
 Change the runtime type to T4 GPU.<br>
-Next, run next code on Notebook. ( folder_path is the folder path that you save mokuba_colab.py in. )<br>
+Next, run next code on Notebook. ( folder_path is the folder path that you save mokuba_colab2.py in. )<br>
 ```
-!pip install compel
+!pip install compel==2.2.1
 #In Kaggle
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
 #In Google
@@ -16,10 +16,10 @@ import os
 module_path = os.path.abspath( folder_path )
 sys.path.append( module_path )
 
-import mokuba_colab
+import mokuba_colab2
 ```
 ## explanations
-mokuba_colab.text2image(<br>
+mokuba_colab2.text2image(<br>
 &nbsp;&nbsp;&nbsp;&nbsp;loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,<br>&nbsp;&nbsp;&nbsp;&nbsp;sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
@@ -81,6 +81,8 @@ mokuba_colab.text2image(<br>
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
 - return : int list ( error : [] ) It is the seed list.
   
-Output files are images( name : (index)_(the seed).png ) and the logfile. The logfile is writen input parameters.
+Output files are images( name : (index)_(the seed).png ) ~~and the logfile. The logfile is writen input parameters~~.  
+<mark>If safetensors files have CivitAi's Version ID in a item of "id" of metadata, Generation metadata is baked in Output files.  
+The metadata is read in CivitAi.</mark>
 ## my own workflow
 ![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
