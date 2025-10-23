@@ -152,14 +152,24 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
                     f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
                     meta_id=f.metadata()["id"]
                     meta_id = ast.literal_eval(meta_id)
-                    for j in meta_id:
-                        meta_id_list.append(j)
-                    del meta_id
-                    meta_weight=f.metadata()["weight"]
-                    meta_weight = ast.literal_eval(meta_weight)
-                    for j in meta_weight:
-                        meta_weight_list.append(float(j)*lora_weights[i])
-                    del meta_weight
+                    if type(meta_id)=="<class 'list'>":
+                        for j in meta_id:
+                            meta_id_list.append(j)
+                        if "weight" in f.metadata():
+                            meta_weight=f.metadata()["weight"]
+                            meta_weight = ast.literal_eval(meta_weight)
+                            for j in meta_weight:
+                                meta_weight_list.append(float(j)*lora_weights[i])
+                        else:
+                            for j in range(meta_id):
+                                meta_weight_list.append(lora_weights[i])
+                    else:
+                        meta_id_list.append(meta_id)
+                        if "weight" in f.metadata():
+                            meta_weight=f.metadata()["weight"]
+                            meta_weight_list.append(lora_weights[i]*float(meta_weight))
+                        else:
+                            meta_weight_list.append(lora_weights[i])
                     del f
                 except:
                     meta_id_list=list1
@@ -734,14 +744,24 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
                     f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
                     meta_id=f.metadata()["id"]
                     meta_id = ast.literal_eval(meta_id)
-                    for j in meta_id:
-                        meta_id_list.append(j)
-                    del meta_id
-                    meta_weight=f.metadata()["weight"]
-                    meta_weight = ast.literal_eval(meta_weight)
-                    for j in meta_weight:
-                        meta_weight_list.append(float(j)*lora_weights[i])
-                    del meta_weight
+                    if type(meta_id)=="<class 'list'>":
+                        for j in meta_id:
+                            meta_id_list.append(j)
+                        if "weight" in f.metadata():
+                            meta_weight=f.metadata()["weight"]
+                            meta_weight = ast.literal_eval(meta_weight)
+                            for j in meta_weight:
+                                meta_weight_list.append(float(j)*lora_weights[i])
+                        else:
+                            for j in range(meta_id):
+                                meta_weight_list.append(lora_weights[i])
+                    else:
+                        meta_id_list.append(meta_id)
+                        if "weight" in f.metadata():
+                            meta_weight=f.metadata()["weight"]
+                            meta_weight_list.append(lora_weights[i]*float(meta_weight))
+                        else:
+                            meta_weight_list.append(lora_weights[i])
                     del f
                 except:
                     meta_id_list=list1
@@ -1214,3 +1234,4 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         del pipe,conditioning
     del images
     return seed
+
