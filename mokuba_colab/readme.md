@@ -82,7 +82,14 @@ mokuba_colab2.text2image(<br>
 - return : int list ( error : [] ) It is the seed list.
   
 Output files are images( name : (index)_(the seed).png ) ~~and the logfile. The logfile is writen input parameters~~.  
-<mark>If safetensors files have CivitAi's Version ID in a item of "id" of metadata, Generation metadata is baked in Output files.  
+<mark>If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
+(Example)  
+lora file  
+"id" : "111111", "weight" : "1"  
+merged lora file  
+"id" : "111111,222222", "weight" : "0.5,0.5"  
+ckpt file  
+"id" : "123456"  
 The metadata is read in CivitAi.</mark>
 ## my own workflow
 ![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
