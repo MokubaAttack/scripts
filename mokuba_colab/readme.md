@@ -97,3 +97,4 @@ The metadata is read in CivitAi.</mark>
 mokuba_diffusers.ipynb is a file of Google Colab. It is rewritten from code that I use usually.  
 You need to input CivitAi's token in "civitai" of the secret key.  
 Please use it.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MokubaAttack/blob/main/mokuba_colab/mokuba_diffusers.ipynb)
