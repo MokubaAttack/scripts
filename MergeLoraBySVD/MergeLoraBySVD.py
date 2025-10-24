@@ -400,7 +400,7 @@ def merge(
         lbws = []  # zip_longestで扱えるようにlbws未使用時には空のリストにしておく
 
     if win!=None:
-        assert type(win)=="<class 'FreeSimpleGUI.window.Window'>"
+        assert str(type(win))=="<class 'FreeSimpleGUI.window.Window'>"
 
     def str_to_dtype(p):
         if p == "float":
