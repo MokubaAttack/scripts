@@ -2,25 +2,28 @@
 I make My Own Modules from the workflow that I use whenever I make images. My workflow is based on Hires.fix. That works on Google Colab and Kaggle by torch.float16. And that doesn't work for Flux.<br>
 ## requirements
 Change the runtime type to T4 GPU.<br>
-Next, run next code on Notebook. ( folder_path is the folder path that you save mokuba_colab2.py in. )<br>
+Next, run next code on Notebook.<br>
 ```
 !pip install compel==2.2.1
+!pip install pyexiv2
 #In Kaggle
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
 #In Google
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu126
 
-import sys
-import os
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokuba_colab.py"
+path="mokuba_colab.py"
+import requests
+urlData = requests.get(url).content
 
-module_path = os.path.abspath( folder_path )
-sys.path.append( module_path )
+with open(path ,mode='wb') as f:
+  f.write(urlData)
 
-import mokuba_colab2
+import mokuba_colab
 ```
 ## explanations
 mokuba_colab2.text2image(<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,<br>&nbsp;&nbsp;&nbsp;&nbsp;sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,<br>&nbsp;&nbsp;&nbsp;&nbsp;sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pas. j_or_p<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
@@ -79,10 +82,12 @@ mokuba_colab2.text2image(<br>
 - neg_emb : str list ( default : [] ) It is the negative embedding file list.
 - base_safe : str ( default : "base.safetensors" ) It is the checkpoint file.
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
+- pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
+- j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - return : int list ( error : [] ) It is the seed list.
   
-Output files are images( name : (index)_(the seed).png ) ~~and the logfile. The logfile is writen input parameters~~.  
-<mark>If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
+Output files are images( name : (index)_(the seed).png or (index)_(the seed).jpg ).  
+If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
 (Example)  
 lora file  
 "id" : "111111", "weight" : "1"  
@@ -90,7 +95,7 @@ merged lora file
 "id" : "111111,222222", "weight" : "0.5,0.5"  
 ckpt file  
 "id" : "123456"  
-The metadata is read in CivitAi.</mark>
+The metadata is read in CivitAi.
 ## my own workflow
 ![flow image](https://github.com/MokubaAttack/scripts/blob/main/mokuba_colab/flow_image.jpg)
 ## mokuba_diffusers
