@@ -4,7 +4,7 @@ I make My Own Modules from the workflow that I use whenever I make images. My wo
 Change the runtime type to T4 GPU.<br>
 Next, run next code on Notebook.<br>
 ```
-!pip install compel==2.2.1
+!pip install compel
 !pip install pyexiv2
 #In Kaggle
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
@@ -22,7 +22,7 @@ with open(path ,mode='wb') as f:
 import mokuba_colab
 ```
 ## explanations
-mokuba_colab2.text2image(<br>
+mokuba_colab.text2image(<br>
 &nbsp;&nbsp;&nbsp;&nbsp;loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,<br>&nbsp;&nbsp;&nbsp;&nbsp;sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pas. j_or_p<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
