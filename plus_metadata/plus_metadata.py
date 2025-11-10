@@ -5,6 +5,8 @@ import os
 import threading
 import tkinter as tk
 import pyperclip
+import pyexiv2
+import shutil
 
 sg.theme('GrayGrayGray')
 
@@ -62,8 +64,9 @@ ivs["hu"]=""
 ivs["hs"]=""
 ivs["hum"]=""
 ivs["ds"]=""
+ivs["pag"]=""
 keys=[
-    "input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds"
+    "input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds","pag"
 ]
 
 def run(vs,win):
@@ -96,6 +99,8 @@ def run(vs,win):
             metadata=metadata+"Hires steps: "+vs["hs"]+", "
         if vs["hum"]!="":
             metadata=metadata+"Hires upscaler: "+vs["hum"]+", "
+        if vs["pag"]!="":
+            metadata=metadata+"PAG scale: "+vs["pag"]+", "
         metadata=metadata+'Civitai resources: [{"type":"checkpoint","modelVersionId":'+vs["ckpt"]+"}"
         for i in range(4):
             if vs["lora"+str(i+1)]!="":
@@ -113,12 +118,17 @@ def run(vs,win):
             
         for path in paths:
             image_path=path
-            output_path=image_path.replace(".png","_meta.png")
-
-            image = Image.open(image_path)
-            pnginfo = PngImagePlugin.PngInfo()
-            pnginfo.add_text("parameters", metadata)
-            image.save(output_path, "PNG", pnginfo=pnginfo)
+            if image_path.endswith(".png"):
+                output_path=image_path.replace(".png","_meta.png")
+                image = Image.open(image_path)
+                pnginfo = PngImagePlugin.PngInfo()
+                pnginfo.add_text("parameters", metadata)
+                image.save(output_path, "PNG", pnginfo=pnginfo)
+            else:
+                output_path=image_path.replace(".jpg","_meta.jpg")
+                shutil.copy(image_path,output_path)
+                with pyexiv2.Image(output_path) as img:
+                    img.modify_exif({'Exif.Photo.UserComment':metadata})
             if vs["dof"]:
                 os.remove(image_path)
         win["input"].update("")
@@ -164,21 +174,25 @@ def save_data(ls,vs):
         save_data_as(ls,vs)
 
 def load_data(ls,win):
-    result = sg.popup_get_file("select pkl file",title="LOAD",file_types=(('pkl file', '.pkl'),))
-    if os.path.exists(result):
-        f=open(result, 'rb')
-        state_dict= pickle.load(f)
-        for l in ls:
-            if l!="input":
-                try:
-                    win[l].update(state_dict[l])
-                except:
-                    win[l].update("")
-        del state_dict
-        f.close()
-        f=open("setting.ini","w")
-        f.write(result)
-        f.close()
+    try:
+        result = sg.popup_get_file("select pkl file",title="LOAD",file_types=(('pkl file', '.pkl'),))
+    except:
+        result=None
+    if result!=None:
+        if os.path.exists(result):
+            f=open(result, 'rb')
+            state_dict= pickle.load(f)
+            for l in ls:
+                if l!="input":
+                    try:
+                        win[l].update(state_dict[l])
+                    except:
+                        win[l].update("")
+            del state_dict
+            f.close()
+            f=open("setting.ini","w")
+            f.write(result)
+            f.close()
 
 if os.path.exists("setting.ini"):
     f=open("setting.ini","r")
@@ -226,12 +240,13 @@ col4=[
     [sg.Text("Denoising strength"), sg.Input(ivs["ds"],key="ds",right_click_menu=grp_rclick_menu["ds"], size=(10, 1))],
     [sg.Text("Hires upscale"), sg.Input(ivs["hu"],key="hu",right_click_menu=grp_rclick_menu["hu"], size=(10, 1))],
     [sg.Text("Hires steps"), sg.Input(ivs["hs"],key="hs",right_click_menu=grp_rclick_menu["hs"], size=(10, 1))],
-    [sg.Text("Hires upscaler"), sg.Input(ivs["hum"],key="hum",right_click_menu=grp_rclick_menu["hum"], size=(30, 1))]
+    [sg.Text("Hires upscaler"), sg.Input(ivs["hum"],key="hum",right_click_menu=grp_rclick_menu["hum"], size=(30, 1))],
+    [sg.Text("PAG scale"), sg.Input(ivs["pag"],key="pag",right_click_menu=grp_rclick_menu["pag"], size=(10, 1))]
 ]
     
 layout=[
     [
-        sg.Text("input"), sg.Input(key="input",right_click_menu=grp_rclick_menu["input"]),sg.FilesBrowse(file_types=(('image file', '.png'),)),
+        sg.Text("input"), sg.Input(key="input",right_click_menu=grp_rclick_menu["input"]),sg.FilesBrowse(file_types=(('image file', '.png'),('image file', '.jpg'))),
         sg.Checkbox('del original files', key='dof')
     ],
     [sg.Column(col1),sg.Column(col2)],
