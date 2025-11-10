@@ -152,7 +152,7 @@ while True:
             for i in range(20):
                 if values["w"+str(i+1)]!="":
                     try:
-                        weights.append([float(values[1-"w"+str(i+1)]),float(values["w"+str(i+1)])])
+                        weights.append([1-float(values["w"+str(i+1)]),float(values["w"+str(i+1)])])
                         window["w"+str(i+1)].update(str(weights[i][1]))
                     except:
                         if i==0:
@@ -199,3 +199,4 @@ while True:
             pass
      
 window.close()
+
