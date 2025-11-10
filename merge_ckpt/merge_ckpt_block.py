@@ -152,15 +152,15 @@ while True:
             for i in range(20):
                 if values["w"+str(i+1)]!="":
                     try:
-                        weights.append([float(values["w"+str(i+1)]),1-float(values["w"+str(i+1)])])
-                        window["w"+str(i+1)].update(str(weights[i][0]))
+                        weights.append([float(values[1-"w"+str(i+1)]),float(values["w"+str(i+1)])])
+                        window["w"+str(i+1)].update(str(weights[i][1]))
                     except:
                         if i==0:
                             weights.append([0.5,0.5])
                             window["w"+str(i+1)].update("0.5")
                         else:
                             weights.append(weights[0])
-                            window["w"+str(i+1)].update(str(weights[0][0]))
+                            window["w"+str(i+1)].update(str(weights[0][1]))
                 else:
                     if i==0:
                         weights.append([0.5,0.5])
