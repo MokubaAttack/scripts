@@ -333,6 +333,14 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : Euler a\n"
         meta_dict["sa"]=sample
+    elif sample=="Euler Karras":
+        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : Euler Karras\n"
+        meta_dict["sa"]=sample
+    elif sample=="Euler a Karras":
+        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : Euler a Karras\n"
+        meta_dict["sa"]=sample
     elif sample=="LMS":
         pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : LMS\n"
@@ -564,6 +572,10 @@ def text2image(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", pro
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
         elif sample=="Euler a":
             pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Euler Karras":
+            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="Euler a Karras":
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
         elif sample=="LMS":
             pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
         elif sample=="Heun":
@@ -934,6 +946,14 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : Euler a\n"
         meta_dict["sa"]=sample
+    elif sample=="Euler Karras":
+        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : Euler Karras\n"
+        meta_dict["sa"]=sample
+    elif sample=="Euler a Karras":
+        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        memo=memo+"scheduler : Euler a Karras\n"
+        meta_dict["sa"]=sample
     elif sample=="LMS":
         pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
         memo=memo+"scheduler : LMS\n"
@@ -1157,6 +1177,10 @@ def text2image15(loras=[], lora_weights=[], prompt = "", n_prompt = "", t="v", p
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
         elif sample=="Euler a":
             pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+        elif sample=="Euler Karras":
+            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
+        elif sample=="Euler a Karras":
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
         elif sample=="LMS":
             pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
         elif sample=="Heun":
