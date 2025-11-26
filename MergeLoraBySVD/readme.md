@@ -1,9 +1,9 @@
 # MergeLoraBySVD
-I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. <mark>I make it to run by one file, and metadata to be baked in output file.</mark>
+I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. I make it to run by one file, and metadata not to be baked in output file.
 ## requirements
 python modules
 ```
-pip install opencv-contrib-python torch diffusers torchvision accelerate toml transformers einops imagesize
+pip install torch safetensors packaging numpy
 ```
 ~~github repository  
 [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)~~
@@ -51,5 +51,13 @@ pip install opencv-contrib-python torch diffusers torchvision accelerate toml tr
 &nbsp;&nbsp;&nbsp;&nbsp;
 #filename of output  
 &nbsp;&nbsp;&nbsp;&nbsp;
-**save_to=None**  
+**save_to=None,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+#window of FreeSimpleGUI  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**win=None,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+#the degree of using memory  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**mem_limit=None**  
 **)**
