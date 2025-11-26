@@ -6,6 +6,7 @@ Next, run next code on Notebook.<br>
 ```
 !pip install compel
 !pip install pyexiv2
+!pip install torchsde
 #In Kaggle
 !pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
 #In Google
