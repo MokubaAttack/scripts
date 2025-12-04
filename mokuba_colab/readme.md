@@ -72,7 +72,6 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
   - UniPC
   - LCM
 - sgm : str (default : "" ) It is the noise schedule and the schedule type.
-  - 
   - Karras
   - sgm_uniform
   - simple
