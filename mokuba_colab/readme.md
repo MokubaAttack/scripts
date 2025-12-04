@@ -24,7 +24,7 @@ import mokuba_colab
 ```
 ## explanations
 mokuba_colab.text2image(<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,<br>&nbsp;&nbsp;&nbsp;&nbsp;sample, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pas. j_or_p<br>
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pas. j_or_p<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
@@ -62,21 +62,22 @@ mokuba_colab.text2image(<br>
   - Heun
   - DPM2
   - DPM2 a
+  - DPM++
   - DPM++ 2M
   - DPM++ SDE
   - DPM++ 2M SDE
   - DPM++ 3M SDE
-  - LMS Karras
-  - DPM2 Karras
-  - DPM2 a Karras
-  - DPM++ 2M Karras
-  - DPM++ SDE Karras
-  - DPM++ 2M SDE Karras
-  - DPM++ 3M SDE Karras
   - DDIM
   - PLMS
   - UniPC
   - LCM
+- sgm : str (default : "" ) It is the noise schedule and the schedule type.
+  - 
+  - Karras
+  - sgm_uniform
+  - simple
+  - exponential
+  - beta
 - seed : int or int list ( default : 0 ) It is the seed or the seed list. If you input zero, the random seeds are made.
 - out_folder : str ( default : "data" ) It is the output folder path. If the folder doesn't exist, that is made.
 - pos_emb : str list ( default : [] ) It is the positive embedding file list.
