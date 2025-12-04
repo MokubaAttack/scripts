@@ -599,7 +599,7 @@ def text2image(
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
         elif sample=="DPM++ SDE":
             pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
-        elif sample=="DPM++"
+        elif sample=="DPM++":
             pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
         elif sample=="DPM++ 2M SDE":
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
@@ -1214,7 +1214,7 @@ def text2image15(
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
         elif sample=="DPM++ SDE":
             pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
-        elif sample=="DPM++"
+        elif sample=="DPM++":
             pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
         elif sample=="DPM++ 2M SDE":
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
@@ -1319,4 +1319,5 @@ def text2image15(
         del pipe,conditioning
     del images
     return seed
+
     
