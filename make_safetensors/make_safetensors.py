@@ -33,21 +33,26 @@ choices=[
     "Heun",
     "DPM2",
     "DPM2 a",
+    "DPM++",
     "DPM++ 2M",
     "DPM++ SDE",
     "DPM++ 2M SDE",
     "DPM++ 3M SDE",
-    "LMS Karras",
-    "DPM2 Karras",
-    "DPM2 a Karras",
-    "DPM++ 2M Karras",
-    "DPM++ SDE Karras",
-    "DPM++ 2M SDE Karras",
-    "DPM++ 3M SDE Karras",
     "DDIM",
     "PLMS",
     "UniPC",
     "LCM"
+]
+choices2=[
+    "",
+    "Karras",
+    "exponential",
+    "beta",
+    "sgm_uniform",
+    "simple"
+]
+sgm_use=[
+    "Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
 ]
 if not(os.path.exists(os.getcwd()+"/pipecache")):
     os.mkdir(os.getcwd()+"/pipecache")
@@ -301,7 +306,7 @@ def convert_openclip_text_enc_state_dict(text_enc_dict):
 def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
-def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w,sample):
+def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w,sample,sgm):
     w.find_element('RUN').Update(disabled=True)
     try:
         dtype=torch.float16
@@ -310,51 +315,123 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,w,sam
             notification.notify(title="error",message="the ckpt file doesn't exist.",timeout=8)
             return
         pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=dtype,cache_dir=os.getcwd()+"/pipecache")
+
+        sgm_dict={}
+        sgm_dict["use_karras_sigmas"]=False
+        sgm_dict["use_exponential_sigmas"]=False
+        sgm_dict["use_beta_sigmas"]=False
+        if sample in sgm_use:
+            if sgm=="Karras":
+                sgm_dict["timestep_spacing"]="linspace"
+                sgm_dict["use_karras_sigmas"]=True
+            elif sgm=="exponential":
+                sgm_dict["timestep_spacing"]="linspace"
+                sgm_dict["use_exponential_sigmas"]=True
+            elif sgm=="beta":
+                sgm_dict["timestep_spacing"]="linspace"
+                sgm_dict["use_beta_sigmas"]=True
+            elif sgm=="sgm_uniform" or sgm=="simple":
+                sgm_dict["timestep_spacing"]="trailing"
+            else:
+                sgm_dict["timestep_spacing"]="linspace"
+        else:
+            if sgm=="sgm_uniform" or sgm=="simple":
+                sgm_dict["timestep_spacing"]="trailing"
+            else:
+                sgm_dict["timestep_spacing"]="leading"
         
         if sample=="Euler":
-            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="Euler a":
-            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="LMS":
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="Heun":
-            pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="DPM2":
-            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="DPM2 a":
-            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="DPM++ 2M":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="DPM++ SDE":
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
+            algorithm_type="sde-dpmsolver++",
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
+        elif sample=="DPM++":
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="DPM++ 2M SDE":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++")
-        elif sample=="LMS Karras":
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM2 Karras":
-            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM2 a Karras":
-            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM++ 2M Karras":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM++ SDE Karras":
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM++ 2M SDE Karras":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,algorithm_type="sde-dpmsolver++",use_karras_sigmas=True)
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
+            algorithm_type="sde-dpmsolver++",
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="PLMS":
-            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
         elif sample=="UniPC":
-            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         elif sample=="LCM":
-            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
         elif sample=="DPM++ 3M SDE":
-            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
-        elif sample=="DPM++ 3M SDE Karras":
-            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_karras_sigmas=True)
-        elif sample=="DPM++ 3M SDE Exponential":
-            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,use_exponential_sigmas=True)
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,
+            timestep_spacing=sgm_dict["timestep_spacing"],
+            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
+            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
+            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
+            )
         else:
-            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
         
         if vae_safe!="":
             if os.path.exists(vae_safe):
@@ -500,6 +577,7 @@ layout =[
     [sg.InputText(key='lora3',right_click_menu=grp_rclick_menu["lora3"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
     [sg.Text("weight"),sg.InputText("1.0",key='w3',right_click_menu=grp_rclick_menu["w3"])],
     [sg.Text("Sampler"), sg.Combo(default_value="DDIM",values=choices,key="sa")],
+    [sg.Text("Noise schedule and schedule type"), sg.Combo(default_value="",values=choices2,key="sgm_type")],
     [sg.Text("out file")],
     [sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
     [sg.Button('RUN'),sg.Button('EXIT')]
@@ -524,8 +602,9 @@ while True:
         lora2w=values["w2"]
         lora3w=values["w3"]
         sample=values["sa"]
+        sgm=values["sgm_type"]
         if base_safe!="" and out_safe!="":
-            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window,sample))
+            thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window,sample,sgm))
             thread1.start()
                 
     elif "-copy-" in event:
