@@ -50,8 +50,8 @@ def mergeckpt(ckpts,weights,v,out_path,win):
             out_dict={}
             out_dict[k]=torch.zeros(data_dict[k])
             for i in range(2):
-                state_dict=sds[i]
-                if k in state_dict:
+                if k in sds[i]:
+                    state_dict={k:sds[i][k]}
                     if k.startswith("model.diffusion_model.middle_block."):
                         out_dict[k]=out_dict[k]+(state_dict[k]*weights[10][i])
                     elif k.startswith("model.diffusion_model.input_blocks."):
@@ -69,6 +69,8 @@ def mergeckpt(ckpts,weights,v,out_path,win):
                                 out_dict[k]=out_dict[k]+(state_dict[k]*weights[0][i])
                         else:
                             out_dict[k]=out_dict[k]+(state_dict[k]*weights[0][i])
+                    del sds[i][k]
+                    del state_dict
             out_dict[k]=out_dict[k].to(torch.float16)
             save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
             del out_dict
@@ -113,7 +115,7 @@ def mergeckpt(ckpts,weights,v,out_path,win):
             weights[i]=weights[i][0]
         f.write("weight : "+str(weights)+"\n")
         f.close()
-        del out_dict,state_dict
+        del out_dict
         shutil.rmtree(os.getcwd()+"/safe_temp")
         win.find_element('RUN').Update(disabled=False)
         win["info"].update("fin")
