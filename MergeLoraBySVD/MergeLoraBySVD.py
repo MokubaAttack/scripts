@@ -264,6 +264,9 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
     key_count=0
     if win==None:
         print("load lora")
+    lora_sds=[]
+    for model in models:
+        lora_sds.append(load_state_dict(model, merge_dtype))
     for m in range(len(keys)):
         merged_sd={}
         for key in keys[m]:
@@ -272,8 +275,8 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
                 win["info"].update("load lora : "+str(key_count)+"/"+str(key_sum))
             else:
                 print("\r"+str(key_count)+"/"+str(key_sum),end="")
-            for model, ratio, lbw in itertools.zip_longest(models, ratios, lbws):
-                lora_sd = load_state_dict(model, merge_dtype)
+            for model, ratio, lbw in itertools.zip_longest(lora_sds, ratios, lbws):
+                lora_sd = model
 
                 if lbw:
                     lbw_weights = [1] * 26
@@ -341,7 +344,7 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
 
     if win==None:
         print("\n")
-    del lora_sd
+    del lora_sds
 
     merged_lora_sd = {}
     with torch.no_grad():
