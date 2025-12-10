@@ -6,21 +6,44 @@ import tkinter as tk
 import pyperclip
 from plyer import notification
 import threading
+import gc
 
 sg.theme('GrayGrayGray')
+
+def spckpt(path,folder,ind):
+    f=open(path,"rb")
+    l=int.from_bytes(f.read(8),byteorder="little")
+    head=f.read(l).decode()
+    head=json.loads(head)
+    head.pop("__metadata__")
+    for k,w in head.items():
+        sd={"__metadata__":{"format":"pt"}}
+        sd[k]=w
+        n=sd[k]["data_offsets"][1]-sd[k]["data_offsets"][0]
+        sd[k]["data_offsets"][0]=0
+        sd[k]["data_offsets"][1]=n
+        sd=str(sd).replace("'",'"')
+        sd=sd.encode()
+        l_sd=len(sd).to_bytes(8,byteorder="little")
+        out=open(folder+"/"+ind+"_"+k+".safetensors","wb")
+        out.write(l_sd)
+        out.write(sd)
+        out.write(f.read(n))
+        out.close()
+    f.close()
 
 def mergeckpt(ckpts,weights,v,out_path,win):
     win.find_element('RUN').Update(disabled=True)
     if not(out_path.endswith(".safetensors")):
         win.find_element('RUN').Update(disabled=False)
         win["info"].update("error")
-        notification.notify(title="error",message="the output is not a safetensors file.",timeout=8)
+        notification.notify(title="error",message=path+" does not exist.",timeout=8)
         return
     for path in ckpts:
         if not(os.path.exists(path)):
             win.find_element('RUN').Update(disabled=False)
             win["info"].update("error")
-            notification.notify(title="error",message=path+" does not exist.",timeout=8)
+            notification.notify(title="error",message="I failed in the output.",timeout=8)
             return
     try:
         safe=open(os.getcwd()+"/data.txt","r")
@@ -40,18 +63,26 @@ def mergeckpt(ckpts,weights,v,out_path,win):
                     s.append(int(data[i]))
             data_dict[k]=s
         safe.close()
-        
+
+        thr1=threading.Thread(target=spckpt,args=(ckpts[0],os.getcwd()+"/safe_temp","1"))
+        thr2=threading.Thread(target=spckpt,args=(ckpts[1],os.getcwd()+"/safe_temp","2"))
+        thr1.start()
+        thr2.start()
+        thr1.join()
+        thr2.join()
+        del thr1,thr2
+        gc.collect()
+
         dict_sum=len(list(data_dict))
         key_count=0
-        sds=[load_file(ckpts[0]),load_file(ckpts[1])]
         for k in data_dict:
             key_count=key_count+1
             win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
             out_dict={}
             out_dict[k]=torch.zeros(data_dict[k])
             for i in range(2):
-                if k in sds[i]:
-                    state_dict={k:sds[i][k]}
+                if os.path.exists(os.getcwd()+"/safe_temp/"+str(i+1)+"_"+k+".safetensors"):
+                    state_dict=load_file(os.getcwd()+"/safe_temp/"+str(i+1)+"_"+k+".safetensors")
                     if k.startswith("model.diffusion_model.middle_block."):
                         out_dict[k]=out_dict[k]+(state_dict[k]*weights[10][i])
                     elif k.startswith("model.diffusion_model.input_blocks."):
@@ -69,12 +100,11 @@ def mergeckpt(ckpts,weights,v,out_path,win):
                                 out_dict[k]=out_dict[k]+(state_dict[k]*weights[0][i])
                         else:
                             out_dict[k]=out_dict[k]+(state_dict[k]*weights[0][i])
-                    del sds[i][k]
                     del state_dict
             out_dict[k]=out_dict[k].to(torch.float16)
             save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
             del out_dict
-        del sds
+            gc.collect()
 
         win["info"].update("making output")
         out_dict={}
@@ -93,10 +123,10 @@ def mergeckpt(ckpts,weights,v,out_path,win):
             f.close()
         output=open(out_path,"wb")
         out_dict=str(out_dict).replace("'",'"')
-        b_out_dict=out_dict.encode()
-        b_l=len(b_out_dict).to_bytes(8,byteorder="little")
-        output.write(b_l)
-        output.write(b_out_dict)
+        out_dict=out_dict.encode()
+        l=len(b_out_dict).to_bytes(8,byteorder="little")
+        output.write(l)
+        output.write(out_dict)
         for k in data_dict:
             f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
             l=int.from_bytes(f.read(8),byteorder="little")
@@ -115,8 +145,9 @@ def mergeckpt(ckpts,weights,v,out_path,win):
             weights[i]=weights[i][0]
         f.write("weight : "+str(weights)+"\n")
         f.close()
-        del out_dict
         shutil.rmtree(os.getcwd()+"/safe_temp")
+        del out_dict,l,head,n,offsets
+        gc.collect()
         win.find_element('RUN').Update(disabled=False)
         win["info"].update("fin")
         notification.notify(title="fin",message=out_path,timeout=8)
