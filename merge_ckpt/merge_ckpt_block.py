@@ -124,7 +124,7 @@ def mergeckpt(ckpts,weights,v,out_path,win):
         output=open(out_path,"wb")
         out_dict=str(out_dict).replace("'",'"')
         out_dict=out_dict.encode()
-        l=len(b_out_dict).to_bytes(8,byteorder="little")
+        l=len(out_dict).to_bytes(8,byteorder="little")
         output.write(l)
         output.write(out_dict)
         for k in data_dict:
