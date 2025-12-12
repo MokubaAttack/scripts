@@ -241,8 +241,8 @@ while True:
                         weights.append([0.5,0.5])
                         window["w"+str(i+1)].update("0.5")
                     else:
-                        weights.append(weights[0])
-                        window["w"+str(i+1)].update(str(weights[0][0]))
+                        weights.append(weights[i-1])
+                        window["w"+str(i+1)].update(str(weights[i-1][1]))
             thread1 = threading.Thread(target=mergeckpt,args=(ckpts,weights,v,out_path,window))
             thread1.start()
     elif event=="cancel":
