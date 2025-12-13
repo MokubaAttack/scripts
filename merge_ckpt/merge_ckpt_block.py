@@ -64,14 +64,8 @@ def mergeckpt(ckpts,weights,v,out_path,win):
             data_dict[k]=s
         safe.close()
 
-        thr1=threading.Thread(target=spckpt,args=(ckpts[0],os.getcwd()+"/safe_temp","1"))
-        thr2=threading.Thread(target=spckpt,args=(ckpts[1],os.getcwd()+"/safe_temp","2"))
-        thr1.start()
-        thr2.start()
-        thr1.join()
-        thr2.join()
-        del thr1,thr2
-        gc.collect()
+        spckpt(ckpts[0],os.getcwd()+"/safe_temp","1")
+        spckpt(ckpts[1],os.getcwd()+"/safe_temp","2")
 
         dict_sum=len(list(data_dict))
         key_count=0
