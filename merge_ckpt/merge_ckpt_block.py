@@ -37,13 +37,13 @@ def mergeckpt(ckpts,weights,v,out_path,win):
     if not(out_path.endswith(".safetensors")):
         win.find_element('RUN').Update(disabled=False)
         win["info"].update("error")
-        notification.notify(title="error",message=path+" does not exist.",timeout=8)
+        notification.notify(title="error",message="the output path is needed to be a safetensors file.",timeout=8)
         return
     for path in ckpts:
         if not(os.path.exists(path)):
             win.find_element('RUN').Update(disabled=False)
             win["info"].update("error")
-            notification.notify(title="error",message="I failed in the output.",timeout=8)
+            notification.notify(title="error",message=path+" does not exist.",timeout=8)
             return
     try:
         safe=open(os.getcwd()+"/data.txt","r")
