@@ -607,9 +607,9 @@ def merge(
             state_dict[key] = value.to(save_dtype)
 
     if isinstance(meta_dict, dict):
-        save_file(save_to, state_dict,metadata=meta_dict)
+        save_file(state_dict,save_to,metadata=meta_dict)
     else:
-        save_file(save_to,state_dict)
+        save_file(state_dict,save_to)
     
     if win==None:
         print("fin")
@@ -790,3 +790,4 @@ if __name__=="__main__":
                 pass
 
     window.close()
+    
