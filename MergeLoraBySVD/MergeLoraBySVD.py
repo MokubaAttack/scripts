@@ -237,7 +237,7 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
     n=0
     keys.append([])
     for model in models:
-        lora_sd = load_file(model, merge_dtype)
+        lora_sd = load_file(model)
         all_keys=[]
         for m in range(len(keys)):
             all_keys=all_keys+keys[m]
@@ -257,7 +257,7 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
         print("load lora")
     lora_sds=[]
     for model in models:
-        lora_sds.append(load_file(model, merge_dtype))
+        lora_sds.append(load_file(model))
     for m in range(len(keys)):
         merged_sd={}
         for key in keys[m]:
@@ -411,7 +411,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
         LBW_TARGET_IDX = []
 
     for model, ratio, lbw in itertools.zip_longest(models, ratios, lbws):
-        lora_sd = load_file(model, merge_dtype)
+        lora_sd = load_file(model)
 
         if lbw:
             lbw_weights = [1] * 26
@@ -790,4 +790,3 @@ if __name__=="__main__":
                 pass
 
     window.close()
-    
