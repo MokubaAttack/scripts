@@ -15,7 +15,7 @@ It is a script that burns a vae and loras in a checkpoint. This script is based 
 ## [merge_ckpt](https://github.com/MokubaAttack/scripts/tree/main/merge_ckpt)
 It is a script that merge SDXL checkpoints. This script supports block merge and DARE merge.
 ## [MergeLoraBySVD](https://github.com/MokubaAttack/scripts/tree/main/MergeLoraBySVD)
-I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module.
+I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. I make it to run by one file.
 ## [plus_metadata](https://github.com/MokubaAttack/scripts/tree/main/plus_metadata)
 It is a script that write metadata to PNG file. That metadata is recognized in CivitAi.
 ## [accuracy](https://github.com/MokubaAttack/scripts/tree/main/accuracy)
