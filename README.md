@@ -20,3 +20,5 @@ I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/netw
 It is a script that write metadata to PNG file. That metadata is recognized in CivitAi.
 ## [accuracy](https://github.com/MokubaAttack/scripts/tree/main/accuracy)
 It is a script that changes the accuracy of the safetensors file.
+## [differense_between_ckpts](https://github.com/MokubaAttack/scripts/tree/main/difference between ckpts)
+I make [extract_lora_from_models.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/extract_lora_from_models.py) of kohya-ss/sd-scripts into a module. But this script supports SDXL models only. I make it to run by one file.
