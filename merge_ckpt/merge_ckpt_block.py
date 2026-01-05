@@ -154,7 +154,7 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
         else:
             f.write("vae : None\n")
         for i in range(20):
-            weights[i]=weights[i][0]
+            weights[i]=weights[i][1]
         f.write("weight : "+str(weights)+"\n")
         f.close()
         shutil.rmtree(os.getcwd()+"/safe_temp")
@@ -350,7 +350,7 @@ def mergeckptdare(ckpts,weights,v,out_path,dp,seed,win=None):
         else:
             f.write("vae : None\n")
         for i in range(20):
-            weights[i]=weights[i][0]
+            weights[i]=weights[i][1]
         f.write("weight : "+str(weights)+"\n")
         f.close()
         shutil.rmtree(os.getcwd()+"/safe_temp")
