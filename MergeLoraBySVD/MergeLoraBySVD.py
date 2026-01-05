@@ -1,9 +1,5 @@
 from safetensors.torch import load_file,save_file
-import itertools
-import json
-import os,shutil
-import re
-import torch
+import itertools,json,os,shutil,re,torch
 
 ok=[
     "lora_unet_out_2",
@@ -334,7 +330,7 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
         del merged_sd
 
     if win==None:
-        print("\n")
+        print("")
     del lora_sds
 
     merged_lora_sd = {}
@@ -398,7 +394,7 @@ def merge_lora_models_lowmem(models, ratios, lbws, new_rank, new_conv_rank, devi
 
     shutil.rmtree("temp")
     if win==None:
-        print("\n")
+        print("")
     return merged_lora_sd
 
 def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, merge_dtype,win):
@@ -486,7 +482,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 
             merged_sd[lora_module_name] = weight.to("cpu")
         if win==None:
-            print("\n")
+            print("")
 
     del lora_sd
     merged_lora_sd = {}
@@ -501,7 +497,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
                 win["info"].update("svd : "+str(key_count)+"/"+str(key_sum))
             else:
                 print("\r"+str(key_count)+"/"+str(key_sum),end="")
-            if not(lora_module_name in ok):
+            if not(lora_modeule_name in ok):
                 if device:
                     mat = mat.to(device)
 
@@ -545,7 +541,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
                 merged_lora_sd[lora_module_name + ".lora_down.weight"] = down_weight.to("cpu").contiguous()
                 merged_lora_sd[lora_module_name + ".alpha"] = torch.tensor(module_new_rank, device="cpu")
     if win==None:
-        print("\n")
+        print("")
     return merged_lora_sd
 
 def merge(
