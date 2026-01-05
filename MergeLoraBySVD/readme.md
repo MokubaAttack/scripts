@@ -7,9 +7,9 @@ pip install torch safetensors packaging numpy
 ```
 ~~github repository  
 [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)~~
-## setup
-1. App path of sd-scripts directory to system path.
-2. Save MergeLoraBySVD to sd-scripts directory or current directory.
+## ~~setup~~
+1. ~~App path of sd-scripts directory to system path.~~
+2. ~~Save MergeLoraBySVD to sd-scripts directory or current directory.~~
 ## explanations
 **MergeLoraBySVD.merge(**  
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -59,5 +59,11 @@ pip install torch safetensors packaging numpy
 &nbsp;&nbsp;&nbsp;&nbsp;
 #the degree of using memory  
 &nbsp;&nbsp;&nbsp;&nbsp;
-**mem_limit=None**  
+**mem_limit=None,**  
+&nbsp;&nbsp;&nbsp;&nbsp;
+#the dict of metadata  
+&nbsp;&nbsp;&nbsp;&nbsp;
+**meta_dict=None**  
 **)**
+## Credits
+[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
