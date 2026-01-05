@@ -1,7 +1,5 @@
-import os,shutil,json
+import os,shutil,json,numpy,torch,gc
 from safetensors.torch import save_file,load_file
-import torch
-import gc
 
 def spckpt(path,folder,ind):
     f=open(path,"rb")
@@ -50,7 +48,10 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
         if os.path.exists(os.getcwd()+"/safe_temp"):
             shutil.rmtree(os.getcwd()+"/safe_temp")
         os.mkdir(os.getcwd()+"/safe_temp")
-        win["info"].update("making initial ckpt")
+        if win==None:
+            print("making initial ckpt")
+        else:
+            win["info"].update("making initial ckpt")
         data_dict={}
         for line in safe:
             data=line.split(",")
@@ -71,7 +72,10 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
         key_count=0
         for k in data_dict:
             key_count=key_count+1
-            win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
+            if win!=None:
+                win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
+            else:
+                print("\rmerging "+str(key_count)+"/"+str(dict_sum),end="")
             out_dict={}
             out_dict[k]=torch.zeros(data_dict[k])
             for i in range(2):
@@ -99,8 +103,13 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
             save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
             del out_dict
             gc.collect()
+        if win==None:
+            print("")
 
-        win["info"].update("making output")
+        if win==None:
+            print("making output")
+        else:
+            win["info"].update("making output")
         out_dict={}
         out_dict["__metadata__"]={"format":"pt"}
         n=0
@@ -121,13 +130,22 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
         l=len(out_dict).to_bytes(8,byteorder="little")
         output.write(l)
         output.write(out_dict)
+        dict_sum=len(list(data_dict))
+        key_count=0
         for k in data_dict:
+            key_count=key_count+1
+            if win==None:
+                print("\r"+str(key_count)+"/"+str(dict_sum),end="")
+            else:
+                win["info"].update("making output "+str(key_count)+"/"+str(dict_sum))
             f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
             l=int.from_bytes(f.read(8),byteorder="little")
             head=f.read(l)
             output.write(f.read())
             f.close()
         output.close()
+        if win==None:
+            print("")
         f=open(out_path.replace(".safetensors",".txt"),"w")
         for i in range(len(ckpts)):
             f.write("ckpt"+str(i+1)+" : "+ckpts[i]+"\n")
@@ -158,6 +176,203 @@ def mergeckpt(ckpts,weights,v,out_path,win=None):
             win["info"].update("error")
             notification.notify(title="error",message="I failed in the output.",timeout=8)
 
+def mergeckptdare(ckpts,weights,v,out_path,dp,seed,win=None):
+    if win!=None:
+        win["RUN"].Update(disabled=True)
+    if not(out_path.endswith(".safetensors")):
+        if win==None:
+            print("the output path is needed to be a safetensors file.")
+        else:
+            win["RUN"].Update(disabled=False)
+            win["info"].update("error")
+            notification.notify(title="error",message="the output path is needed to be a safetensors file.",timeout=8)
+        return
+    for path in ckpts:
+        if not(os.path.exists(path)):
+            if win==None:
+                print(path+" does not exist.")
+            else:
+                win["RUN"].Update(disabled=False)
+                win["info"].update("error")
+                notification.notify(title="error",message=path+" does not exist.",timeout=8)
+            return
+    if dp==0:
+        if win==None:
+            print("You cannot go to Dropout probability with a choice of 0.")
+        else:
+            win["RUN"].Update(disabled=False)
+            win["info"].update("error")
+            notification.notify(title="error",message="You cannot go to Dropout probability with a choice of 0.",timeout=8)
+        return
+    try:
+        safe=open(os.getcwd()+"/data.txt","r")
+        if os.path.exists(os.getcwd()+"/safe_temp"):
+            shutil.rmtree(os.getcwd()+"/safe_temp")
+        os.mkdir(os.getcwd()+"/safe_temp")
+        if win==None:
+            print("making initial ckpt")
+        else:
+            win["info"].update("making initial ckpt")
+        data_dict={}
+        for line in safe:
+            data=line.split(",")
+            s=[]
+            out_dict={}
+            for i in range(len(data)):
+                if i==0:
+                    k=data[i]
+                else:
+                    s.append(int(data[i]))
+            data_dict[k]=s
+        safe.close()
+
+        spckpt(ckpts[0],os.getcwd()+"/safe_temp","1")
+        spckpt(ckpts[1],os.getcwd()+"/safe_temp","2")
+
+        dict_sum=len(list(data_dict))
+        key_count=0
+        if seed!=0:
+            numpy.random.seed(seed)
+        for k in data_dict:
+            key_count=key_count+1
+            if win!=None:
+                win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
+            else:
+                print("\rmerging "+str(key_count)+"/"+str(dict_sum),end="")
+            out_dict={}
+            if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
+                t1=load_file(os.getcwd()+"/safe_temp/1_"+k+".safetensors")[k].to(torch.float32)
+            else:
+                t1=torch.zeros(data_dict[k]).to(torch.float32)
+
+            if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
+                t2=load_file(os.getcwd()+"/safe_temp/2_"+k+".safetensors")[k].to(torch.float32)
+            else:
+                out_dict[k]=t1.to(torch.float16)
+                save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                del out_dict
+                gc.collect()
+                continue
+
+            if k.startswith("model.diffusion_model.middle_block."):
+                w=weights[10][1]
+            elif k.startswith("model.diffusion_model.input_blocks."):
+                j=int(k.split(".")[3])
+                w=weights[1+j][1]
+            elif k.startswith("model.diffusion_model.output_blocks."):
+                j=int(k.split(".")[3])
+                w=weights[11+j][1]
+            else:
+                if k.startswith("first_stage_model."):
+                    if v==0:
+                        out_dict[k]=t1.to(torch.float16)
+                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                        del out_dict
+                        gc.collect()
+                        continue
+                    elif v==1:
+                        out_dict[k]=t2.to(torch.float16)
+                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                        del out_dict
+                        gc.collect()
+                        continue
+                    else:
+                        w=weights[0][1]
+                else:
+                    w=weights[0][1]
+
+            if t1.dim() in (1, 2):
+                dw = t2.shape[-1] - t1.shape[-1]
+                if dw > 0:
+                    t1 = torch.nn.functional.pad(t1, (0, dw, 0, 0))
+                elif dw < 0: 
+                    t2 = torch.nn.functional.pad(t2, (0, -dw, 0, 0))
+                dh = t2.shape[0] - t1.shape[0]
+                if dh > 0:
+                    t1 = torch.nn.functional.pad(t1, (0, 0, 0, dh))
+                elif dh < 0:
+                    t2 = torch.nn.functional.pad(t2, (0, 0, 0, -dh))
+                del dw,dh
+            dt=t2-t1
+            m = torch.from_numpy(numpy.random.binomial(1, dp, dt.shape)).to(torch.float32)
+            out_dict[k] = (t1 + w * m * dt / (1 - dp)).to(torch.float16)
+            save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+            del out_dict,dt,t1,t2,w,m
+            gc.collect()
+        if win==None:
+            print("")
+
+        if win==None:
+            print("making output")
+        else:
+            win["info"].update("making output")
+        out_dict={}
+        out_dict["__metadata__"]={"format":"pt"}
+        n=0
+        for k in data_dict:
+            f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
+            l=int.from_bytes(f.read(8),byteorder="little")
+            head=f.read(l).decode()
+            head=json.loads(head)
+            out_dict[k]=head[k]
+            offsets=out_dict[k]["data_offsets"][1]
+            out_dict[k]["data_offsets"][0]=n
+            n=n+offsets
+            out_dict[k]["data_offsets"][1]=n
+            f.close()
+        output=open(out_path,"wb")
+        out_dict=str(out_dict).replace("'",'"')
+        out_dict=out_dict.encode()
+        l=len(out_dict).to_bytes(8,byteorder="little")
+        output.write(l)
+        output.write(out_dict)
+        dict_sum=len(list(data_dict))
+        key_count=0
+        for k in data_dict:
+            key_count=key_count+1
+            if win==None:
+                print("\r"+str(key_count)+"/"+str(dict_sum),end="")
+            else:
+                win["info"].update("making output "+str(key_count)+"/"+str(dict_sum))
+            f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
+            l=int.from_bytes(f.read(8),byteorder="little")
+            head=f.read(l)
+            output.write(f.read())
+            f.close()
+        output.close()
+        if win==None:
+            print("")
+        f=open(out_path.replace(".safetensors",".txt"),"w")
+        for i in range(len(ckpts)):
+            f.write("ckpt"+str(i+1)+" : "+ckpts[i]+"\n")
+        if v!=-1:
+            f.write("vae : "+ckpts[v]+"\n")
+        else:
+            f.write("vae : None\n")
+        for i in range(20):
+            weights[i]=weights[i][0]
+        f.write("weight : "+str(weights)+"\n")
+        f.close()
+        shutil.rmtree(os.getcwd()+"/safe_temp")
+        del out_dict,l,head,n,offsets
+        gc.collect()
+        if win==None:
+            print(out_path)
+        else:
+            win["RUN"].Update(disabled=False)
+            win["info"].update("fin")
+            notification.notify(title="fin",message=out_path,timeout=8)
+
+    except:
+        if os.path.exists(os.getcwd()+"/safe_temp"):
+            shutil.rmtree(os.getcwd()+"/safe_temp")
+        if win==None:
+            print("I failed in the output.")
+        else:
+            win["RUN"].Update(disabled=False)
+            win["info"].update("error")
+            notification.notify(title="error",message="I failed in the output.",timeout=8)
+
 if __name__=="__main__":
     import FreeSimpleGUI as sg
     import tkinter as tk
@@ -166,7 +381,7 @@ if __name__=="__main__":
     import threading
 
     sg.theme('GrayGrayGray')       
-    keys=["ckpt1","ckpt2","out"]
+    keys=["ckpt1","ckpt2","out","dp","seed"]
     for i in range(20):
         keys.append("w"+str(i+1))
     grp_rclick_menu={}
@@ -205,6 +420,11 @@ if __name__=="__main__":
             sg.Frame("OUT06",[[sg.Input(key="w18",right_click_menu=grp_rclick_menu["w18"], size=(10, 1))]]),
             sg.Frame("OUT07",[[sg.Input(key="w19",right_click_menu=grp_rclick_menu["w19"], size=(10, 1))]]),
             sg.Frame("OUT08",[[sg.Input(key="w20",right_click_menu=grp_rclick_menu["w20"], size=(10, 1))]])
+        ],
+        [
+            sg.Checkbox('DARE', key='dare',default=False,enable_events=True),
+            sg.Text("Dropout probability",visible=False,key="dpt"), sg.Input(key="dp",size=(10, 1),visible=False,right_click_menu=grp_rclick_menu["dp"]),
+            sg.Text("seed",visible=False,key="seedt"), sg.Input(key="seed",visible=False,right_click_menu=grp_rclick_menu["seed"])
         ],
         [sg.Text("output path"), sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
         [sg.Text("infomation",key="info")],
@@ -251,7 +471,20 @@ if __name__=="__main__":
                         else:
                             weights.append(weights[i-1])
                             window["w"+str(i+1)].update(str(weights[i][1]))
-                thread1 = threading.Thread(target=mergeckpt,args=(ckpts,weights,v,out_path,window))
+                if values["dare"]:
+                    try:
+                        dp=float(values["dp"])
+                    except:
+                        dp=0.5
+                    try:
+                        seed=int(values["seed"])
+                    except:
+                        seed=0
+                    window["dp"].update(str(dp))
+                    window["seed"].update(str(seed))
+                    thread1 = threading.Thread(target=mergeckptdare,args=(ckpts,weights,v,out_path,dp,seed,window))
+                else:
+                    thread1 = threading.Thread(target=mergeckpt,args=(ckpts,weights,v,out_path,window))
                 thread1.start()
         elif event=="cancel":
             for i in range(2):
@@ -280,5 +513,14 @@ if __name__=="__main__":
                 window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
             except:
                 pass
-        
+
+        elif "dare" in event:
+            try:
+                window["dpt"].update(visible=values["dare"])
+                window["dp"].update(visible=values["dare"])
+                window["seedt"].update(visible=values["dare"])
+                window["seed"].update(visible=values["dare"])
+            except:
+                pass
+
     window.close()
