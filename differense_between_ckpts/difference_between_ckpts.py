@@ -1,8 +1,6 @@
 from diffusers import StableDiffusionXLPipeline
-import torch
+import torch,gc,os,shutil
 from safetensors.torch import load_file, save_file
-import gc,os,shutil
-from tqdm import tqdm
 
 CLAMP_QUANTILE=0.99
 
@@ -137,14 +135,15 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
 
         names=list(set(names0+names1))
         sd={}
-        if win!=None:
-            names_sum=len(names)
-            name_count=0
+        names_sum=len(names)
+        name_count=0
 
-        for name in tqdm(names):
+        for name in names:
+            name_count=name_count+1
             if win!=None:
-                name_count=name_count+1
                 win["info"].update("differ "+str(name_count)+"/"+str(names_sum))
+            else:
+                print("\rdiffer "+str(name_count)+"/"+str(names_sum),end="")
             sd1=load_file(temp_path+"/0_"+name+".safetensors")
             sd2=load_file(temp_path+"/1_"+name+".safetensors")
             mat=(sd2[name]-sd1[name]).to(torch.float)
@@ -184,6 +183,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
                     Vh = Vh.reshape(module_new_rank, in_dim, kernel_size[0], kernel_size[1])
             except:
                 if win==None:
+                    print("")
                     print(name)
                 else:
                     win["RUN"].Update(disabled=False)
@@ -203,6 +203,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         save_file(sd,out_path)
         shutil.rmtree(temp_path)
         if win==None:
+            print("")
             print("fin")
         else:
             win["RUN"].Update(disabled=False)
