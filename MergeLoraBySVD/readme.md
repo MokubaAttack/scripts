@@ -1,5 +1,5 @@
 # MergeLoraBySVD
-I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. I make it to run by one file, and metadata not to be baked in output file.
+I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. I make it to run by one file.
 ## requirements
 python modules
 ```
