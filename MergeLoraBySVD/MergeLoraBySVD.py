@@ -497,7 +497,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
                 win["info"].update("svd : "+str(key_count)+"/"+str(key_sum))
             else:
                 print("\r"+str(key_count)+"/"+str(key_sum),end="")
-            if not(lora_modeule_name in ok):
+            if not(lora_module_name in ok):
                 if device:
                     mat = mat.to(device)
 
