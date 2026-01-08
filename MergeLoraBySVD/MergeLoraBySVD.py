@@ -621,7 +621,7 @@ def get_function(vs,win):
                 if not(os.path.exists(vs["ckpt"+str(i+1)])):
                     win['RUN'].Update(disabled=False)
                     win["info"].update("error")
-                    notification.notify(title="error",message="lora"+str(i+1)+" file does not exist.",timeout=8)
+                    notification.notify(title="error",message="lora"+str(i+1)+" file does not exist.")
                     return
                 loras.append(vs["ckpt"+str(i+1)])
                 try:
@@ -643,7 +643,7 @@ def get_function(vs,win):
             else:
                 win['RUN'].Update(disabled=False)
                 win["info"].update("error")
-                notification.notify(title="error",message="You need to select the safetensors file for lora"+str(i+1)+" file.",timeout=8)
+                notification.notify(title="error",message="You need to select the safetensors file for lora"+str(i+1)+" file.")
                 return
     
     if vs["out"].endswith(".safetensors"):
@@ -651,7 +651,7 @@ def get_function(vs,win):
     else:
         win['RUN'].Update(disabled=False)
         win["info"].update("error")
-        notification.notify(title="error",message="You need to select the safetensors file for output file.",timeout=8)
+        notification.notify(title="error",message="You need to select the safetensors file for output file.")
         return
     
     try:
@@ -678,11 +678,11 @@ def get_function(vs,win):
         win['RUN'].Update(disabled=False)
         win["out"].update(out_path)
         win["info"].update("fin")
-        notification.notify(title="fin",message=out_path,timeout=8)
+        notification.notify(title="fin",message=out_path)
     except:
         win['RUN'].Update(disabled=False)
         win["info"].update("error")
-        notification.notify(title="error",message="I failed in the output.",timeout=8)
+        notification.notify(title="error",message="I failed in the output.")
 
 if __name__=="__main__":
     import threading
