@@ -31,6 +31,6 @@ bad fingers, extra fingers, liquid finger, missing fingers, nipples, Stable_Yogi
 - **denoising_strength** : 0.4  
 - **pag_scale** : 3.0  
 - **size** : ( 600, 800 ) to ( 1200, 1600 )  
-- **Embedding**
+- **Embedding**  
 [Stable Yogis PDXL Negatives Anatomy_Negatives_v1.0](https://civitai.com/models/1331758?modelVersionId=2044068)  
 [Stable Yogis PDXL Positives Anatomy_Positives_v1.0](https://civitai.com/models/1331980?modelVersionId=2044573)
