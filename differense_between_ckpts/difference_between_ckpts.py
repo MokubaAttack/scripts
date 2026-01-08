@@ -93,7 +93,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         else:
             win["RUN"].Update(disabled=False)
             win["info"].update("error")
-            notification.notify(title="error",message="the output path is needed to be a safetensors file.",timeout=8)
+            notification.notify(title="error",message="the output path is needed to be a safetensors file.")
         return
 
     for path in paths:
@@ -103,7 +103,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
             else:
                 win["RUN"].Update(disabled=False)
                 win["info"].update("error")
-                notification.notify(title="error",message=path+" does not exist.",timeout=8)
+                notification.notify(title="error",message=path+" does not exist.")
             return
 
     if c[0]==False and c[1]==False and c[2]==False:
@@ -112,7 +112,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         else:
             win["RUN"].Update(disabled=False)
             win["info"].update("error")
-            notification.notify(title="error",message="You choose no contents.",timeout=8)
+            notification.notify(title="error",message="You choose no contents.")
         return
 
     temp_path=os.getcwd()+"/safe_temp"
@@ -188,7 +188,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
                 else:
                     win["RUN"].Update(disabled=False)
                     win["info"].update("error "+name)
-                    notification.notify(title="error",message=name,timeout=8)
+                    notification.notify(title="error",message=name)
                 shutil.rmtree(temp_path)
                 return
 
@@ -208,7 +208,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         else:
             win["RUN"].Update(disabled=False)
             win["info"].update("fin")
-            notification.notify(title="fin",message=out_path,timeout=8)
+            notification.notify(title="fin",message=out_path)
     except:
         if os.path.exists(temp_path):
             shutil.rmtree(temp_path)
@@ -217,7 +217,7 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         else:
             win["RUN"].Update(disabled=False)
             win["info"].update("error")
-            notification.notify(title="error",message="I failed in the output.",timeout=8)
+            notification.notify(title="error",message="I failed in the output.")
 
 if __name__=="__main__":
     import tkinter as tk
