@@ -37,3 +37,5 @@ bad fingers, extra fingers, liquid finger, missing fingers, nipples, Stable_Yogi
 - **Embedding**  
 [Stable Yogis PDXL Negatives Anatomy_Negatives_v1.0](https://civitai.com/models/1331758?modelVersionId=2044068)  
 [Stable Yogis PDXL Positives Anatomy_Positives_v1.0](https://civitai.com/models/1331980?modelVersionId=2044573)  
+### result
+![result](https://github.com/MokubaAttack/scripts/blob/main/merge_ckpt/mokubamerge/mokubamerge.jpg)
