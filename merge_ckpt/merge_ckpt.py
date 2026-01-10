@@ -56,7 +56,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 notification.notify(title="error",message="0 < Dropout probability <= 0.5")
             return
     else:
-        if not(mode in ["normal","mdare"]):
+        if not(mode in ["normal","mokuba"]):
             if win==None:
                 print("You must choose one of normal or dare or mdare.")
             else:
@@ -173,17 +173,21 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             elif mode=="normal":
                 out_dict[k]=((1-w)*t1+w*t2).to(torch.float16)
 
-            elif mode=="mdare":
+            elif mode=="mokuba":
                 dt=t2-t1
                 dt_mean=torch.mean(dt).item()
-                dt_mean=dt_mean*torch.ones(dt.size(), dtype=torch.float32)
                 dt_std=torch.std(dt).item()
-                m=torch.where(torch.abs(dt-dt_mean)<=dt_std,1,0).to(torch.float32)
-                out_dict[k] = (t1 + w * m * dt / 0.32).to(torch.float16)
-                del dt,dt_mean,dt_std,m
+                dt[dt>dt_mean+2*w*dt_std]=dt_mean+2*w*dt_std
+                dt[dt<dt_mean-2*w*dt_std]=dt_mean-2*w*dt_std
+                out_dict[k] = (t1 + w * dt).to(torch.float16)
+                del dt,dt_mean,dt_std
 
             save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
             del w,out_dict,t1,t2
+            if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
+                os.remove(os.getcwd()+"/safe_temp/1_"+k+".safetensors")
+            if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
+                os.remove(os.getcwd()+"/safe_temp/2_"+k+".safetensors")
             gc.collect()
 
         if win==None:
@@ -226,6 +230,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             head=f.read(l)
             output.write(f.read())
             f.close()
+            os.remove(os.getcwd()+"/safe_temp/"+k+".safetensors")
         output.close()
             
         f=open(out_path.replace(".safetensors",".txt"),"w")
@@ -252,6 +257,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             win["RUN"].Update(disabled=False)
             win["info"].update("fin")
             notification.notify(title="fin",message=out_path)
+
     except:
         if os.path.exists(os.getcwd()+"/safe_temp"):
             shutil.rmtree(os.getcwd()+"/safe_temp")
@@ -314,7 +320,7 @@ if __name__=="__main__":
                 sg.Frame("OUT07",[[sg.Input(key="w19",right_click_menu=grp_rclick_menu["w19"], size=(10, 1))]],key="o7"),
                 sg.Frame("OUT08",[[sg.Input(key="w20",right_click_menu=grp_rclick_menu["w20"], size=(10, 1))]],key="o8")
             ],
-            [sg.Checkbox('DARE', key='dare',default=False,enable_events=True),sg.Checkbox('MDARE', key='mdare',default=False,enable_events=True)],
+            [sg.Checkbox('DARE', key='dare',default=False,enable_events=True),sg.Checkbox('MOKUBA', key='mokuba',default=False,enable_events=True)],
             [
                 sg.Text("Dropout probability"), sg.Input(key="dp",size=(10, 1),right_click_menu=grp_rclick_menu["dp"]),
                 sg.Text("seed"), sg.Input(key="seed",right_click_menu=grp_rclick_menu["seed"])
@@ -425,15 +431,15 @@ if __name__=="__main__":
                     window["seed"].update(str(seed))
                     mode="dare"
 
-                elif values["mdare"]:
+                elif values["mokuba"]:
                     dp=0
                     seed=0
-                    mode="mdare"
+                    mode="mokuba"
 
                 else:
                     dp=0
                     seed=0
-                    mode="mdare"
+                    mode="normal"
 
                 thread1 = threading.Thread(target=mergeckpt,args=(ckpts,weights,v,out_path,mode,dp,seed,window))
                 thread1.start()
