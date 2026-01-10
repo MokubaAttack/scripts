@@ -8,9 +8,13 @@ Next, run next code on Notebook.<br>
 !pip install pyexiv2
 !pip install torchsde
 #In Kaggle
-!pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu124
+!pip uninstall diffusers torch torchvision -y
+!pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu124
+!pip install diffusers==0.34.0
 #In Google
-!pip3 install -U xformers --index-url https://download.pytorch.org/whl/cu126
+!pip uninstall diffusers torch torchvision -y
+!pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu126
+!pip install diffusers==0.34.0
 
 url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokuba_colab.py"
 path="mokuba_colab.py"
