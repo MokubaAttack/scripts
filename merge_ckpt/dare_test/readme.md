@@ -7,15 +7,15 @@ I examined the difference when I changed weights.
 - **merge seed** : random  
 - **weights of ckpt2**  
   - **case 1**  
-base : 0.0, other : 0.1  
+base : 0.0, others : 0.1  
   - **case 2**  
-base : 0.0, other : 0.2  
+base : 0.0, others : 0.2  
   - **case 3**  
-base : 0.0, other : 0.3  
+base : 0.0, others : 0.3  
   - **case 4**  
-base : 0.0, other : 0.4  
+base : 0.0, others : 0.4  
   - **case 5**  
-base : 0.0, other : 0.5  
+base : 0.0, others : 0.5  
 ## txt2img setting
 - **workflow** : mokuba_colab
 - **prompt**  
