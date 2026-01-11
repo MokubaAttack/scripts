@@ -6,19 +6,17 @@ DARA merge include randomness. It doesn't feel right. I thought about new method
 ### merge setting  
 - **ckpt1** : [Ikastrious Classic v2.0](https://civitai.com/models/1728694?modelVersionId=2056128) (illustrious)  
 - **ckpt2** : [Pure Florine v1.0 (No VAE)](https://civitai.com/models/1678041?modelVersionId=1899272) (Pony)  
-- **Dropout probability** : 0.5  
-- **merge seed** : random  
 - **weights of ckpt2**  
   - **case 1**  
-base : 0.0, other : 0.1  
+base : 0.0, others : 0.1  
   - **case 3**  
-base : 0.0, other : 0.3  
+base : 0.0, others : 0.3  
   - **case 5**  
-base : 0.0, other : 0.5  
+base : 0.0, others : 0.5  
   - **case 7**  
-base : 0.0, other : 0.7  
+base : 0.0, others : 0.7  
   - **case 9**  
-base : 0.0, other : 0.9  
+base : 0.0, others : 0.9  
 ### txt2img setting
 - **workflow** : mokuba_colab
 - **prompt**  
