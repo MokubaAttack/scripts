@@ -62,7 +62,9 @@ def plus_meta(vs,img):
             metadata=metadata+"Hires steps: "+vs["hs"]+", "
         if vs["hum"]!="":
             metadata=metadata+"Hires upscaler: "+vs["hum"]+", "
-        metadata=metadata+'Civitai resources: [{"type":"checkpoint","modelVersionId":'+vs["ckpt"]+"}"
+        metadata=metadata+'Civitai resources: ['
+        if vs["ckpt"]!="":
+            metadata=metadata+'{"type":"checkpoint","modelVersionId":'+vs["ckpt"]+"}"
         if vs["lora"]!="[]":
             lora_list= ast.literal_eval(vs["lora"])
             w_list=ast.literal_eval(vs["w"])
@@ -77,6 +79,9 @@ def plus_meta(vs,img):
         if vs["vae"]!="":
             metadata=metadata+',{"modelVersionId":'+vs["vae"]+"}"
         metadata=metadata+'], Civitai metadata: {}'
+
+        if "[," in metadata:
+            metadata=metadata.replace("[,","[")
     
         image_path=vs["input"]
         if image_path.endswith(".jpg"):
@@ -1575,3 +1580,4 @@ def text2image15(
     return seed
 
     
+
