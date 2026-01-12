@@ -62,7 +62,9 @@ def plus(path,pr,ne,ckpt,st="",sa="",sc="",cf="",se="",cl="",hu="",hs="",hum="",
             metadata=metadata+"Hires upscaler: "+hum+", "
         if pag!="":
             metadata=metadata+"PAG scale: "+pag+", "
-        metadata=metadata+'Civitai resources: [{"type":"checkpoint","modelVersionId":'+ckpt+"}"
+        metadata=metadata+'Civitai resources: ['
+        if ckpt!="":
+            metadata=metadata+'{"type":"checkpoint","modelVersionId":'+ckpt+"}"
         for i in range(len(loras)):
             metadata=metadata+',{"type":"lora","weight":'+ws[i]+',"modelVersionId":'+loras[i]+"}"
         for i in range(len(embeds)):
@@ -70,6 +72,9 @@ def plus(path,pr,ne,ckpt,st="",sa="",sc="",cf="",se="",cl="",hu="",hs="",hum="",
         if vae!="":
             metadata=metadata+',{"modelVersionId":'+vae+"}"
         metadata=metadata+'], Civitai metadata: {}'
+
+        if "[," in metadata:
+            metadata=metadata.replace("[,","[")
             
         if path.endswith(".png"):
             output_path=path.replace(".png","_meta.png")
