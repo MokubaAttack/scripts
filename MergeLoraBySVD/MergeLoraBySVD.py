@@ -747,7 +747,7 @@ if __name__=="__main__":
                     out_path=values["out"]
                 ok = sg.popup_ok_cancel(out_path,title='output file',keep_on_top=True)
                 if ok=="OK":
-                    thread1 = threading.Thread(target=run_function,args=(values,window))
+                    thread1 = threading.Thread(target=get_function,args=(values,window))
                     thread1.start()
         elif "-copy-" in event:
             try:
