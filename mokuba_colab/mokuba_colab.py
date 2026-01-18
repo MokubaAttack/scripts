@@ -77,7 +77,7 @@ def plus_meta(vs,img):
                 metadata=metadata+',{"type":"embed","modelVersionId":'+str(embed_list[i])+"}"
 
         if vs["vae"]!="":
-            metadata=metadata+',{"modelVersionId":'+vs["vae"]+"}"
+            metadata=metadata+',{"type":"ae","modelVersionId":'+vs["vae"]+"}"
         metadata=metadata+'], Civitai metadata: {}'
 
         if "[," in metadata:
@@ -1580,4 +1580,5 @@ def text2image15(
     return seed
 
     
+
 
