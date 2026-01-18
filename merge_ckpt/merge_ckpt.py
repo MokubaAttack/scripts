@@ -132,6 +132,10 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             elif k.startswith("model.diffusion_model.output_blocks."):
                 j=int(k.split(".")[3])
                 w=weights[11+j][1]
+            elif k.startswith("model.diffusion_model.label_emb.") or k.startswith("model.diffusion_model.time_embed."):
+                w=weights[1][1]
+            elif k.startswith("model.diffusion_model.out."):
+                w=weights[19][1]
             else:
                 if k.startswith("first_stage_model."):
                     if v==0:
