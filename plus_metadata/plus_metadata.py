@@ -70,7 +70,7 @@ def plus(path,pr,ne,ckpt,st="",sa="",sc="",cf="",se="",cl="",hu="",hs="",hum="",
         for i in range(len(embeds)):
             metadata=metadata+',{"type":"embed","modelVersionId":'+embeds[i]+"}"
         if vae!="":
-            metadata=metadata+',{"modelVersionId":'+vae+"}"
+            metadata=metadata+',{"type":"ae","modelVersionId":'+vae+"}"
         metadata=metadata+'], Civitai metadata: {}'
 
         if "[," in metadata:
@@ -268,6 +268,8 @@ def read_meta(path,win):
                         if k2>4:
                             k2=4
                             win["info"].print("warning : There is more number of embeds than 4.")
+                    else:
+                        win["vae"].update(str(sd["modelVersionId"]))
         win["info"].print("fin", end="\n")
     except:
         win["info"].print("error", end="\n")
@@ -302,6 +304,7 @@ if __name__=="__main__":
     sc_list=[
         "","Karras","beta","exponential","sgm_uniform","simple"
     ]
+    hum_list=["NEAREST","BOX","BILINEAR","HAMMING","BICUBIC","LANCZOS"]
     ivs={}
     ivs["pr"]="prompt"
     ivs["ne"]="negative prompt"
@@ -349,7 +352,7 @@ if __name__=="__main__":
 
     grp_rclick_menu={}
     for key in keys:
-        if key=="sa" or key=="sc":
+        if key=="sa" or key=="sc" or key=="hum":
             continue
         grp_rclick_menu[key]=[
             "",
@@ -378,7 +381,7 @@ if __name__=="__main__":
         [sg.Text("Denoising strength"), sg.Input(ivs["ds"],key="ds",right_click_menu=grp_rclick_menu["ds"], size=(10, 1))],
         [sg.Text("Hires upscale"), sg.Input(ivs["hu"],key="hu",right_click_menu=grp_rclick_menu["hu"], size=(10, 1))],
         [sg.Text("Hires steps"), sg.Input(ivs["hs"],key="hs",right_click_menu=grp_rclick_menu["hs"], size=(10, 1))],
-        [sg.Text("Hires upscaler"), sg.Input(ivs["hum"],key="hum",right_click_menu=grp_rclick_menu["hum"], size=(30, 1))],
+        [sg.Text("Hires upscaler"), sg.Combo(default_value=ivs["hum"],key="hum",values=hum_list)],
         [sg.Text("PAG scale"), sg.Input(ivs["pag"],key="pag",right_click_menu=grp_rclick_menu["pag"], size=(10, 1))]
     ]
         
