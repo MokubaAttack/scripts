@@ -196,6 +196,25 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
 
         if win==None:
             print("")
+
+        if type(v) is str:
+            if os.path.exists(v):
+                if win==None:
+                    print("baking vae")
+                else:
+                    win["info"].update("baking vae")
+                vae_dict=load_file(v)
+                for k in vae_dict:
+                    out_dict={}
+                    out_dict["first_stage_model."+k]=vae_dict[k].to(torch.float16)
+                    save_file(out_dict,os.getcwd()+"/safe_temp/first_stage_model."+k+".safetensors")
+                    del out_dict
+                del vae_dict
+                gc.collect()
+            else:
+                v=-1
+
+        if win==None:
             print("making output")
         else:
             win["info"].update("making output")
@@ -240,10 +259,13 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
         f=open(out_path.replace(".safetensors",".txt"),"w")
         for i in range(len(ckpts)):
             f.write("ckpt"+str(i+1)+" : "+ckpts[i]+"\n")
-        if v!=-1:
-            f.write("vae : "+ckpts[v]+"\n")
+        if type(v) is str:
+            f.write("vae : "+v+"\n")
         else:
-            f.write("vae : None\n")
+            if v!=-1:
+                f.write("vae : "+ckpts[v]+"\n")
+            else:
+                f.write("vae : None\n")
         for i in range(20):
             weights[i]=weights[i][1]
         f.write("weight : "+str(weights)+"\n")
@@ -281,7 +303,7 @@ if __name__=="__main__":
 
     sg.theme('TealMono')
       
-    keys=["ckpt1","ckpt2","out","dp","seed"]
+    keys=["ckpt1","ckpt2","out","dp","seed","vaefile"]
     for i in range(21):
         keys.append("w"+str(i))
     grp_rclick_menu={}
@@ -329,13 +351,15 @@ if __name__=="__main__":
                 sg.Text("Dropout probability"), sg.Input(key="dp",size=(10, 1),right_click_menu=grp_rclick_menu["dp"]),
                 sg.Text("seed"), sg.Input(key="seed",right_click_menu=grp_rclick_menu["seed"])
             ],
+            [sg.Checkbox('bake vae', key='bakevae',default=False,enable_events=True)],
+            [sg.Text("vae path"), sg.Input(key="vaefile",right_click_menu=grp_rclick_menu["vaefile"]),sg.FileBrowse( file_types=(('vae file', '.safetensors'),))],
             [sg.Text("output path"), sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
             [sg.Text("infomation",key="info")],
             [sg.Button('RUN', key='RUN'),sg.Button('Cancel Vae', key='cancel'),sg.Button('EXIT', key='EXIT')]
         ]
         return lay
 
-    def lay_che(b,d,win):
+    def lay_che(b,d,v,win):
         win["ckpt1"].hide_row()
         win["ckpt2"].hide_row()
         win["block"].hide_row()
@@ -345,6 +369,8 @@ if __name__=="__main__":
         win["mid"].hide_row()
         win["dare"].hide_row()
         win["dp"].hide_row()
+        win["bakevae"].hide_row()
+        win["vaefile"].hide_row()
         win["out"].hide_row()
         win["info"].hide_row()
         win["RUN"].hide_row()
@@ -360,6 +386,9 @@ if __name__=="__main__":
         win["dare"].unhide_row()
         if d:
             win["dp"].unhide_row()
+        win["bakevae"].unhide_row()
+        if v:
+            win["vaefile"].unhide_row()
         win["out"].unhide_row()
         win["info"].unhide_row()
         win["RUN"].unhide_row()
@@ -369,7 +398,7 @@ if __name__=="__main__":
     window = sg.Window('Merge Ckpt', layout,icon=icon_path)
 
     event, values = window.read(timeout=0)
-    lay_che(False,False,window)
+    lay_che(False,False,False,window)
 
     while True:
         event, values = window.read()
@@ -387,6 +416,8 @@ if __name__=="__main__":
                     v=1
                 else:
                     v=-1
+                if values["bakevae"]:
+                    v=values["vaefile"]
                 ckpts=[values["ckpt1"],values["ckpt2"]]
                 weights=[]
                 if values["block"]:
@@ -474,7 +505,7 @@ if __name__=="__main__":
                 window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
             except:
                 pass
-        elif ("dare" in event) or event=="block":
+        elif ("dare" in event) or event=="block" or event=="bakevae":
             try:
                 if event=="dare":
                     if values["mdare"]:
@@ -484,7 +515,7 @@ if __name__=="__main__":
                     if values["dare"]:
                         window["dare"].update(False)
                         values["dare"]=False
-                lay_che(values["block"],values["dare"],window)
+                lay_che(values["block"],values["dare"],values["bakevae"],window)
             except:
                 pass
 
