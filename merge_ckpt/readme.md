@@ -1,5 +1,5 @@
 # merge_ckpt
-It is a script that merge SDXL checkpoints. This script supports block merge and DARE merge. 
+It is a script that merge SDXL checkpoints. This script supports block merge and DARE merge, tensor merge. 
 ## requirements
 python modules
 ```
@@ -17,4 +17,5 @@ You need to save data.txt in the directory that you save merge_ckpt.py in.
 7. After a while, the output file is generated.
 ## Credits
 + block merge : [hako-mikan/sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger)
++ tensor merge : [hako-mikan/sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger)
 + DARE merge : [martyn/safetensors-merge-supermario](https://github.com/martyn/safetensors-merge-supermario)
