@@ -13,7 +13,7 @@ It is a script that make a embedding from text.
 ## [make_safetensors](https://github.com/MokubaAttack/scripts/tree/main/make_safetensors)
 It is a script that burns a vae and loras in a checkpoint. This script is based on [convert_diffusers_to_original_sdxl.py](https://github.com/huggingface/diffusers/blob/main/scripts/convert_diffusers_to_original_sdxl.py) of huggingface/diffusers.
 ## [merge_ckpt](https://github.com/MokubaAttack/scripts/tree/main/merge_ckpt)
-It is a script that merge SDXL checkpoints. This script supports block merge and DARE merge.
+It is a script that merge SDXL checkpoints. This script supports block merge and DARE merge, tensor merge.  
 ## [MergeLoraBySVD](https://github.com/MokubaAttack/scripts/tree/main/MergeLoraBySVD)
 I make [svd_merge_lora.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py) of kohya-ss/sd-scripts into a module. I make it to run by one file.
 ## [plus_metadata](https://github.com/MokubaAttack/scripts/tree/main/plus_metadata)
