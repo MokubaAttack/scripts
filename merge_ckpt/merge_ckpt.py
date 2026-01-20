@@ -560,7 +560,7 @@ if __name__=="__main__":
                 window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
             except:
                 pass
-        elif "mokuba"=event or "dare"=event or ("tensor" in event) or event=="block" or event=="bakevae":
+        elif "mokuba"==event or "dare"==event or ("tensor" in event) or event=="block" or event=="bakevae":
             try:
                 if event=="dare":
                     if values["mokuba"]:
@@ -608,3 +608,4 @@ if __name__=="__main__":
                 pass
 
     window.close()
+
