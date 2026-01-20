@@ -16,5 +16,5 @@ You need to save data.txt in the directory that you save merge_ckpt.py in.
 6. Click run button.
 7. After a while, the output file is generated.
 ## Credits
-+ block merge : [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
++ block merge : [hako-mikan/sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger)
 + DARE merge : [martyn/safetensors-merge-supermario](https://github.com/martyn/safetensors-merge-supermario)
