@@ -23,6 +23,13 @@ def spckpt(path,folder,ind):
         out.close()
     f.close()
 
+def del_safe(k):
+    if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
+        os.remove(os.getcwd()+"/safe_temp/1_"+k+".safetensors")
+    if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
+        os.remove(os.getcwd()+"/safe_temp/2_"+k+".safetensors")
+    gc.collect()
+
 def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
     if win!=None:
         win["RUN"].Update(disabled=True)
@@ -56,13 +63,13 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 notification.notify(title="error",message="0 < Dropout probability <= 0.5")
             return
     else:
-        if not(mode in ["normal","mokuba"]):
+        if not(mode in ["normal","mokuba","tensor1","tensor2"]):
             if win==None:
-                print("You must choose one of normal or dare or mdare.")
+                print("You must choose one of normal or dare or mokuba or tensor1 or tensor2.")
             else:
                 win["RUN"].Update(disabled=False)
                 win["info"].update("error")
-                notification.notify(title="error",message="You must choose one of normal or dare or mdare.")
+                notification.notify(title="error",message="You must choose one of normal or dare or mokuba or tensor1 or tensor2.")
             return
 
     try:
@@ -121,7 +128,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 out_dict[k]=t1.to(torch.float16)
                 save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
                 del out_dict
-                gc.collect()
+                del_safe(k)
                 continue
 
             if k.startswith("model.diffusion_model.middle_block."):
@@ -142,13 +149,13 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                         out_dict[k]=t1.to(torch.float16)
                         save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
                         del out_dict
-                        gc.collect()
+                        del_safe(k)
                         continue
                     elif v==1:
                         out_dict[k]=t2.to(torch.float16)
                         save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
                         del out_dict
-                        gc.collect()
+                        del_safe(k)
                         continue
                     else:
                         w=weights[0][1]
@@ -186,13 +193,47 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 out_dict[k] = (t1 + w * dt).to(torch.float16)
                 del dt,dt_mean,dt_std
 
+            elif "tensor" in mode:
+                w1=(1-w)/2
+                w2=w
+                w1=round(t1.size()[0]*w1)
+                w2=round(t1.size()[0]*(w1+w2))
+                if w1==0:
+                    out_dict[k]=t2.to(torch.float16)
+                    save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                    del w,out_dict,t1,t2,w1,w1
+                    del_safe(k)
+                    continue
+                elif w2==0:
+                    out_dict[k]=t1.to(torch.float16)
+                    save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                    del w,out_dict,t1,t2,w1,w1
+                    del_safe(k)
+                    continue
+                if mode=="tensor1":
+                    if t1.dim()==1:
+                        t1[w1:w2]=t2[w1:w2]
+                    elif t1.dim()==2:
+                        t1[w1:w2,:]=t2[w1:w2,:]
+                    elif t1.dim()==3:
+                        t1[w1:w2,:,:]=t2[w1:w2,:,:]
+                    elif t1.dim()==4:
+                        t1[w1:w2,:,:,:]=t2[w1:w2,:,:,:]
+                else:
+                    if t1.dim()==1:
+                        t1[w1:w2]=t2[w1:w2]
+                    elif t1.dim()==2:
+                        t1[:,w1:w2]=t2[:,w1:w2]
+                    elif t1.dim()==3:
+                        t1[:,w1:w2,:]=t2[:,w1:w2,:]
+                    elif t1.dim()==4:
+                        t1[:,w1:w2,:,:]=t2[:,w1:w2,:,:]
+                out_dict[k]=t1.to(torch.float16)
+                del w1,w2
+
             save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
             del w,out_dict,t1,t2
-            if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
-                os.remove(os.getcwd()+"/safe_temp/1_"+k+".safetensors")
-            if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
-                os.remove(os.getcwd()+"/safe_temp/2_"+k+".safetensors")
-            gc.collect()
+            del_safe(k)
 
         if win==None:
             print("")
@@ -346,7 +387,12 @@ if __name__=="__main__":
                 sg.Frame("OUT07",[[sg.Input(key="w19",right_click_menu=grp_rclick_menu["w19"], size=(10, 1))]],key="o7"),
                 sg.Frame("OUT08",[[sg.Input(key="w20",right_click_menu=grp_rclick_menu["w20"], size=(10, 1))]],key="o8")
             ],
-            [sg.Checkbox('DARE', key='dare',default=False,enable_events=True),sg.Checkbox('MOKUBA', key='mokuba',default=False,enable_events=True)],
+            [
+                sg.Checkbox('DARE', key='dare',default=False,enable_events=True),
+                sg.Checkbox('TENSOR1', key='tensor1',default=False,enable_events=True),
+                sg.Checkbox('TENSOR2', key='tensor2',default=False,enable_events=True),
+                sg.Checkbox('MOKUBA', key='mokuba',default=False,enable_events=True)
+            ],
             [
                 sg.Text("Dropout probability"), sg.Input(key="dp",size=(10, 1),right_click_menu=grp_rclick_menu["dp"]),
                 sg.Text("seed"), sg.Input(key="seed",right_click_menu=grp_rclick_menu["seed"])
@@ -471,6 +517,15 @@ if __name__=="__main__":
                     seed=0
                     mode="mokuba"
 
+                elif values["tensor1"]:
+                    dp=0
+                    seed=0
+                    mode="tensor1"
+                elif values["tensor2"]:
+                    dp=0
+                    seed=0
+                    mode="tensor2"
+
                 else:
                     dp=0
                     seed=0
@@ -505,16 +560,49 @@ if __name__=="__main__":
                 window[key].widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
             except:
                 pass
-        elif ("dare" in event) or event=="block" or event=="bakevae":
+        elif "mokuba"=event or "dare"=event or ("tensor" in event) or event=="block" or event=="bakevae":
             try:
                 if event=="dare":
-                    if values["mdare"]:
-                        window["mdare"].update(False)
-                        values["mdare"]=False
-                elif event=="mdare":
+                    if values["mokuba"]:
+                        window["mokuba"].update(False)
+                        values["mokuba"]=False
+                    elif values["tensor1"]:
+                        window["tensor1"].update(False)
+                        values["tensor1"]=False
+                    elif values["tensor2"]:
+                        window["tensor2"].update(False)
+                        values["tensor2"]=False
+                elif event=="mokuba":
                     if values["dare"]:
                         window["dare"].update(False)
                         values["dare"]=False
+                    elif values["tensor1"]:
+                        window["tensor1"].update(False)
+                        values["tensor1"]=False
+                    elif values["tensor2"]:
+                        window["tensor2"].update(False)
+                        values["tensor2"]=False
+                elif event=="tensor1":
+                    if values["dare"]:
+                        window["dare"].update(False)
+                        values["dare"]=False
+                    elif values["mokuba"]:
+                        window["mokuba"].update(False)
+                        values["mokuba"]=False
+                    elif values["tensor2"]:
+                        window["tensor2"].update(False)
+                        values["tensor2"]=False
+                elif event=="tensor2":
+                    if values["dare"]:
+                        window["dare"].update(False)
+                        values["dare"]=False
+                    elif values["tensor1"]:
+                        window["tensor1"].update(False)
+                        values["tensor1"]=False
+                    elif values["mokuba"]:
+                        window["mokuba"].update(False)
+                        values["mokuba"]=False
+                    
                 lay_che(values["block"],values["dare"],values["bakevae"],window)
             except:
                 pass
