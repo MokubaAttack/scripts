@@ -1,12 +1,13 @@
 # mokuba_calob
-I make My Own Modules from the workflow that I use whenever I make images. My workflow is based on Hires.fix. That works on Google Colab and Kaggle by torch.float16. And that doesn't work for Flux.<br>
+I make My Own Modules from the workflow that I use whenever I make images. My workflow is based on Hires.fix. That works on Google Colab and Kaggle by torch.float16. And that doesn't work for Flux.  
 ## requirements
-Change the runtime type to T4 GPU.<br>
-Next, run next code on Notebook.<br>
+Change the runtime type to T4 GPU.  
+Next, run next code on Notebook.  
 ```
 !pip install compel
 !pip install pyexiv2
 !pip install torchsde
+
 #In Kaggle
 !pip uninstall diffusers torch torchvision -y
 !pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu124
@@ -16,13 +17,20 @@ Next, run next code on Notebook.<br>
 !pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu126
 !pip install diffusers==0.34.0
 
+!pip install py-real-esrgan
+
+import requests,py_real_esrgan,os
 url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokuba_colab.py"
 path="mokuba_colab.py"
-import requests
 urlData = requests.get(url).content
-
 with open(path ,mode='wb') as f:
   f.write(urlData)
+
+path=os.path.dirname(py_real_esrgan.__file__)+"/model.py"
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/realersgan/model_mod.py"
+urlData = requests.get(url).content
+with open(path ,mode='wb') as f:
+    f.write(urlData)
 
 import mokuba_colab
 ```
@@ -108,3 +116,5 @@ mokuba_diffusers.ipynb is a file of Google Colab. It is rewritten from code that
 You need to input CivitAi's token in "civitai" of the secret key.  
 Please use it.  
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MokubaAttack/scripts/blob/main/mokuba_colab/mokuba_diffusers.ipynb)
+## Credits
+[xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/tree/master)
