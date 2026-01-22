@@ -1,5 +1,5 @@
 from diffusers import StableDiffusionXLPipeline,AutoencoderKL
-import torch,shutil,os,re
+import torch,shutil,os,re,math
 from safetensors.torch import load_file, save_file
 
 if not(os.path.exists(os.getcwd()+"/pipecache")):
@@ -201,7 +201,7 @@ def convert_vae_state_dict(vae_state_dict):
     for k, v in new_state_dict.items():
         for weight_name in weights_to_convert:
             if f"mid.attn_1.{weight_name}.weight" in k:
-                print(f"Reshaping {k} for SD format")
+                #print(f"Reshaping {k} for SD format")
                 new_state_dict[k] = reshape_weight_for_sd(v)
     return new_state_dict
 
@@ -253,6 +253,16 @@ def convert_openclip_text_enc_state_dict(text_enc_dict):
 
 def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
+
+def zip_ckpt(ckpt1,ckpt2):
+    for k in ckpt1:
+        if k in ckpt2 and not("first_stage_model." in k):
+            sum1=torch.sum(torch.abs(ckpt1[k])).item()
+            sum2=torch.sum(torch.abs(ckpt2[k])).item()
+            n=not(math.isnan(sum1) or math.isnan(sum2))
+            if n and sum1!=sum2:
+                ckpt1[k]=ckpt1[k]*sum2/sum1
+    return ckpt1
 
 def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=None):
     if win!=None:
@@ -386,11 +396,12 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 
         # Put together new checkpoint
         state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict, **text_enc_2_dict}
+        state_dict2=load_file(base_safe)
+        state_dict=zip_ckpt(state_dict,state_dict2)
 
         state_dict = {k: v.half() for k, v in state_dict.items()}
 
         save_file(state_dict, out_safe)
-
         shutil.rmtree(os.getcwd()+"/dummy")
         if win==None:
             print("fin : "+out_safe)
@@ -405,7 +416,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
             win['RUN'].Update(disabled=False)
             win["info"].update("error : fail in the output.")
             notification.notify(title="error",message="fail in the output.")
-
+    
 if __name__=="__main__":
     import FreeSimpleGUI as sg
     from plyer import notification
@@ -461,7 +472,6 @@ if __name__=="__main__":
             lora1w=values["w1"]
             lora2w=values["w2"]
             lora3w=values["w3"]
-            sample=values["sa"]
             if base_safe!="" and out_safe!="":
                 thread1 = threading.Thread(target=run,args=(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,window))
                 thread1.start()
