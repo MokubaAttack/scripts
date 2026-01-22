@@ -1,3 +1,3 @@
 # mokuup
 ## Credits
-[gokayfem](https://github.com/gokayfem/Tile-Upscaler)
+[gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)
