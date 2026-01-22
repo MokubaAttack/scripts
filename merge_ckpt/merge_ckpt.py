@@ -6,7 +6,8 @@ def spckpt(path,folder,ind):
     l=int.from_bytes(f.read(8),byteorder="little")
     head=f.read(l).decode()
     head=json.loads(head)
-    head.pop("__metadata__")
+    if "__metadata__" in head:
+        head.pop("__metadata__")
     for k,w in head.items():
         sd={"__metadata__":{"format":"pt"}}
         sd[k]=w
@@ -324,7 +325,6 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             win["RUN"].Update(disabled=False)
             win["info"].update("fin")
             notification.notify(title="fin",message=out_path)
-
     except:
         if os.path.exists(os.getcwd()+"/safe_temp"):
             shutil.rmtree(os.getcwd()+"/safe_temp")
@@ -608,4 +608,3 @@ if __name__=="__main__":
                 pass
 
     window.close()
-
