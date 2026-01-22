@@ -3,7 +3,7 @@ from diffusers import StableDiffusionPAGPipeline,StableDiffusionPAGImg2ImgPipeli
 from safetensors.torch import load_file
 import safetensors,torch,random,os,shutil,ast,pyexiv2,math
 from PIL import Image,PngImagePlugin
-from IPython.display import clear_output
+from IPython.display import clear_output,display
 from compel import CompelForSD,CompelForSDXL
 from diffusers import EulerDiscreteScheduler
 from diffusers import EulerAncestralDiscreteScheduler
@@ -18,31 +18,26 @@ from diffusers import UniPCMultistepScheduler
 from diffusers import LCMScheduler
 from diffusers import DDIMScheduler
 from diffusers import DPMSolverSDEScheduler
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import ImageGrid
+from py_real_esrgan.model import RealESRGAN
 
 sgm_use=[
     "Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
 ]
 
-def show_img(imgs):
-    ncols=2
-    nrows=math.ceil(len(imgs)/ncols)
-    w, h = imgs[0].size
-    if h>=w:
-        sh=32
-        sw=int(w*32/h)
-    else:
-        sw=32
-        sh=int(h*32/w)
-    fig = plt.figure(figsize=(sw,sh))
-    grid = ImageGrid(fig,111,nrows_ncols=(nrows, ncols),axes_pad=0.5)
-    for i in range(len(imgs)):
-        grid[i].set_title(str(i),fontsize=15)
-        grid[i].imshow(imgs[i])
-    for ax in grid.axes_all:
-        ax.axis('off')
-    plt.show()
+class imgup:
+    def __init__(self,path):
+        device = torch.device('cuda')
+        self.model = RealESRGAN(device, scale=4)
+        self.model.load_weights(path,download=False)
+    def run(self,img,x,y):
+        input_image = img.convert('RGB')
+        while input_image.width<x or input_image.height<y:
+            input_image = self.model.predict(input_image)
+        if input_image.width==x and input_image.height==y:
+            image0=input_image
+        else:
+            image0=input_image.resize((x,y))
+        return image0
 
 def plus_meta(vs,img):
     try:
@@ -131,25 +126,25 @@ def text2image(
         for i in range(pic_number):
             try:
                 if int(seed[i])==0:
-                    seed[i]=random.randint(1, 1000000000)
+                    seed[i]=random.randint(1, sys.maxsize)
                 else:
                     seed[i]=int(seed[i])
             except:
-                seed[i]=random.randint(1, 1000000000)
+                seed[i]=random.randint(1, sys.maxsize)
             memo=memo+str(seed[i])+"\n"
     else:
         try:
             if int(seed)==0:
                 seed=[]
                 for i in range(pic_number):
-                    seed.append(random.randint(1, 1000000000))
+                    seed.append(random.randint(1, sys.maxsize))
             else:
                 seed=[int(seed)]
                 pic_number=1
         except:
             seed=[]
             for i in range(pic_number):
-                seed.append(random.randint(1, 1000000000))
+                seed.append(random.randint(1, sys.maxsize))
         for i in range(pic_number):
             memo=memo+str(seed[i])+"\n"
     clear_output(True)
@@ -318,45 +313,37 @@ def text2image(
             print(" initial width, output width, initial height, output height")
             return []
 
-    if prog_ver!=0:
+    p="esrgan"
+    if isinstance(Interpolation, int):
         if Interpolation==1:
             p=Image.NEAREST
-            memo=memo+"Interpolation : NEAREST\n"
             meta_dict["hum"]="NEAREST"
         elif Interpolation==2:
             p=Image.BOX
-            memo=memo+"Interpolation : BOX\n"
             meta_dict["hum"]="BOX"
         elif Interpolation==3:
             p=Image.BILINEAR
-            memo=memo+"Interpolation : BILINEAR\n"
             meta_dict["hum"]="BILINEAR"
         elif Interpolation==4:
             p=Image.HAMMING
-            memo=memo+"Interpolation : HAMMING\n"
             meta_dict["hum"]="HAMMING"
         elif Interpolation==5:
             p=Image.BICUBIC
-            memo=memo+"Interpolation : BICUBIC\n"
             meta_dict["hum"]="BICUBIC"
         else:
             p=Image.LANCZOS
-            memo=memo+"Interpolation : LANCZOS\n"
             meta_dict["hum"]="LANCZOS"
-    else:
-        meta_dict["hum"]=""
-    clear_output(True)
-    print(memo)
 
-    del t,Interpolation
+    del t
+    gc.collect()
 
     dtype=torch.float16
     if os.path.isfile(vae_safe):
         pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
         pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-        pipe.to("cuda:0")
+        pipe.to("cuda")
     else:
-        pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda:0")
+        pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
         
     sgm_dict={}
     sgm_dict["use_karras_sigmas"]=False
@@ -538,10 +525,18 @@ def text2image(
         meta_dict["ds"]=str(ss)
         memo=memo+"Hires upscale : "+str(yoko[1]/yoko[0])+"\n"
         meta_dict["hu"]=str(yoko[1]/yoko[0])
+        if not(isinstance(Interpolation,int)):
+            if os.path.exists(Interpolation):
+                meta_dict["hum"]=os.path.basename(Interpolation)
+            else:
+                p=Image.BILINEAR
+                meta_dict["hum"]="BILINEAR"
+        memo=memo+"Hires upscaler : "+meta_dict["hum"]+"\n"
     else:
         meta_dict["hs"]=""
         meta_dict["ds"]=""
         meta_dict["hu"]=""
+        meta_dict["hum"]=""
 
     clear_output(True)
     print(memo)
@@ -595,20 +590,31 @@ def text2image(
     
     comple = CompelForSDXL(pipe)
     conditioning = comple(prompt, negative_prompt=n_prompt)
-    del comple
+    prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+    del comple,conditioning
+    gc.collect()
 
     if not(os.path.isdir(out_folder)):
         os.mkdir(out_folder)
 
     images=[]
+    pipe.text_encoder=None
+    pipe.text_encoder_2=None
+    pipe.tokenizer=None
+    pipe.tokenizer_2=None
+
+    if p=="esrgan":
+        uppipe=imgup(Interpolation)
+    del Interpolation
+
     for i in range(pic_number):   
         if prog_ver==2 or prog_ver==1:
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                pooled_prompt_embeds=conditioning.pooled_embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
-                negative_pooled_prompt_embeds=conditioning.negative_pooled_embeds,
+                prompt_embeds=prompts[0],
+                pooled_prompt_embeds=prompts[1],
+                negative_prompt_embeds=prompts[2],
+                negative_pooled_prompt_embeds=prompts[3],
                 height=tate[0],
                 width=yoko[0],
                 guidance_scale=gs,
@@ -617,22 +623,28 @@ def text2image(
                 pag_scale=pag
             ).images[0]
             if prog_ver==2:
-                image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,int(sum(yoko)/2), int(sum(tate)/2))
+                else:
+                    image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
                 images.append(image0)
                 del image,image0
                 torch.cuda.empty_cache()
             else:
-                image0=image.resize((yoko[1], tate[1]), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,yoko[1], tate[1])
+                else:
+                    image0=image.resize((yoko[1], tate[1]), resample=p)
                 images.append(image0)
                 del image,image0
                 torch.cuda.empty_cache()
         else:
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                pooled_prompt_embeds=conditioning.pooled_embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
-                negative_pooled_prompt_embeds=conditioning.negative_pooled_embeds,
+                prompt_embeds=prompts[0],
+                pooled_prompt_embeds=prompts[1],
+                negative_prompt_embeds=prompts[2],
+                negative_pooled_prompt_embeds=prompts[3],
                 height=tate[1],
                 width=yoko[1],
                 guidance_scale=gs,
@@ -647,26 +659,21 @@ def text2image(
             else:
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
             plus_meta(meta_dict,image)
-            images.append(image)
             clear_output(True)
             print(memo)
-            show_img(images[:i+1])
+            display(image)
             del image
             torch.cuda.empty_cache()
 
-    del pipe,conditioning
+    del pipe,prompts
 
     if prog_ver==2 or prog_ver==1:
-        if torch.cuda.device_count()==1:
-            d="cuda:0"
-        else:
-            d="cuda:1"
         if os.path.isfile(vae_safe):
             pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
             pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-            pipe.to(d)
+            pipe.to("cuda")
         else:
-            pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to(d)
+            pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
             
         if sample=="Euler":
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
@@ -795,16 +802,23 @@ def text2image(
                 
         comple = comple = CompelForSDXL(pipe)
         conditioning = comple(prompt, negative_prompt=n_prompt)
-        del comple
+        prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+        del comple,conditioning
+        gc.collect()
+
+        pipe.text_encoder=None
+        pipe.text_encoder_2=None
+        pipe.tokenizer=None
+        pipe.tokenizer_2=None
 
         for i in range(pic_number):
             if prog_ver==2:
                 image = pipe(
                     eta=1.0,
-                    prompt_embeds=conditioning.embeds,
-                    pooled_prompt_embeds=conditioning.pooled_embeds,
-                    negative_prompt_embeds=conditioning.negative_embeds,
-                    negative_pooled_prompt_embeds=conditioning.negative_pooled_embeds,
+                    prompt_embeds=prompts[0],
+                    pooled_prompt_embeds=prompts[1],
+                    negative_prompt_embeds=prompts[2],
+                    negative_pooled_prompt_embeds=prompts[3],
                     image=images[i],
                     guidance_scale=gs,
                     generator=torch.manual_seed(seed[i]),
@@ -813,16 +827,19 @@ def text2image(
                     strength=ss,
                     pag_scale=pag
                 ).images[0]
-                image0=image.resize((yoko[1], tate[1]), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,yoko[1], tate[1])
+                else:
+                    image0=image.resize((yoko[1], tate[1]), resample=p)
                 images[i]=image0
                 del image,image0
                 torch.cuda.empty_cache()
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                pooled_prompt_embeds=conditioning.pooled_embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
-                negative_pooled_prompt_embeds=conditioning.negative_pooled_embeds,
+                prompt_embeds=prompts[0],
+                pooled_prompt_embeds=prompts[1],
+                negative_prompt_embeds=prompts[2],
+                negative_pooled_prompt_embeds=prompts[3],
                 image=images[i],
                 guidance_scale=gs,
                 generator=torch.manual_seed(seed[i]),
@@ -837,13 +854,12 @@ def text2image(
             else:
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
             plus_meta(meta_dict,image)
-            images[i]=image
             clear_output(True)
             print(memo)
-            show_img(images[:i+1])
+            display(image)
             del image
             torch.cuda.empty_cache()
-        del pipe,conditioning
+        del pipe,prompts
     del images
     return seed
 
@@ -879,25 +895,25 @@ def text2image15(
         for i in range(pic_number):
             try:
                 if int(seed[i])==0:
-                    seed[i]=random.randint(1, 1000000000)
+                    seed[i]=random.randint(1, sys.maxsize)
                 else:
                     seed[i]=int(seed[i])
             except:
-                seed[i]=random.randint(1, 1000000000)
+                seed[i]=random.randint(1, sys.maxsize)
             memo=memo+str(seed[i])+"\n"
     else:
         try:
             if int(seed)==0:
                 seed=[]
                 for i in range(pic_number):
-                    seed.append(random.randint(1, 1000000000))
+                    seed.append(random.randint(1, sys.maxsize))
             else:
                 seed=[int(seed)]
                 pic_number=1
         except:
             seed=[]
             for i in range(pic_number):
-                seed.append(random.randint(1, 1000000000))
+                seed.append(random.randint(1, sys.maxsize))
         for i in range(pic_number):
             memo=memo+str(seed[i])+"\n"
     clear_output(True)
@@ -1066,45 +1082,37 @@ def text2image15(
             print(" initial width, output width, initial height, output height")
             return []
 
-    if prog_ver!=0:
+    p="esrgan"
+    if isinstance(Interpolation, int):
         if Interpolation==1:
             p=Image.NEAREST
-            memo=memo+"Interpolation : NEAREST\n"
             meta_dict["hum"]="NEAREST"
         elif Interpolation==2:
             p=Image.BOX
-            memo=memo+"Interpolation : BOX\n"
             meta_dict["hum"]="BOX"
         elif Interpolation==3:
             p=Image.BILINEAR
-            memo=memo+"Interpolation : BILINEAR\n"
             meta_dict["hum"]="BILINEAR"
         elif Interpolation==4:
             p=Image.HAMMING
-            memo=memo+"Interpolation : HAMMING\n"
             meta_dict["hum"]="HAMMING"
         elif Interpolation==5:
             p=Image.BICUBIC
-            memo=memo+"Interpolation : BICUBIC\n"
             meta_dict["hum"]="BICUBIC"
         else:
             p=Image.LANCZOS
-            memo=memo+"Interpolation : LANCZOS\n"
             meta_dict["hum"]="LANCZOS"
-    else:
-        meta_dict["hum"]=""
-    clear_output(True)
-    print(memo)
 
-    del t,Interpolation
+    del t
+    gc.collect()
 
     dtype=torch.float16
     if os.path.isfile(vae_safe):
         pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
         pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-        pipe.to("cuda:0")
+        pipe.to("cuda")
     else:
-        pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda:0")
+        pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
         
     sgm_dict={}
     sgm_dict["use_karras_sigmas"]=False
@@ -1286,10 +1294,18 @@ def text2image15(
         meta_dict["ds"]=str(ss)
         memo=memo+"Hires upscale : "+str(yoko[1]/yoko[0])+"\n"
         meta_dict["hu"]=str(yoko[1]/yoko[0])
+        if not(isinstance(Interpolation,int)):
+            if os.path.exists(Interpolation):
+                meta_dict["hum"]=os.path.basename(Interpolation)
+            else:
+                p=Image.BILINEAR
+                meta_dict["hum"]="BILINEAR"
+        memo=memo+"Hires upscaler : "+meta_dict["hum"]+"\n"
     else:
         meta_dict["hs"]=""
         meta_dict["ds"]=""
         meta_dict["hu"]=""
+        meta_dict["hum"]=""
 
     clear_output(True)
     print(memo)
@@ -1338,18 +1354,27 @@ def text2image15(
     
     comple = CompelForSD(pipe)
     conditioning = comple(prompt, negative_prompt=n_prompt)
-    del comple
+    prompts=[conditioning.embeds,conditioning.negative_embeds]
+    del comple,conditioning
+    gc.collect()
     
     if not(os.path.isdir(out_folder)):
         os.mkdir(out_folder)
 
     images=[]
+    pipe.text_encoder=None
+    pipe.tokenizer=None
+
+    if p=="esrgan":
+        uppipe=imgup(Interpolation)
+    del Interpolation
+
     for i in range(pic_number):
         if prog_ver==2 or prog_ver==1:
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
+                prompt_embeds=prompts[0],
+                negative_prompt_embeds=prompts[1],
                 height=tate[0],
                 width=yoko[0],
                 guidance_scale=gs,
@@ -1359,20 +1384,26 @@ def text2image15(
                 pag_scale=pag
             ).images[0]
             if prog_ver==2:
-                image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,int(sum(yoko)/2), int(sum(tate)/2))
+                else:
+                    image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
                 images.append(image0)
                 del image,image0
                 torch.cuda.empty_cache()
             else:
-                image0=image.resize((yoko[1], tate[1]), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,yoko[1], tate[1])
+                else:
+                    image0=image.resize((yoko[1], tate[1]), resample=p)
                 images.append(image0)
                 del image,image0
                 torch.cuda.empty_cache()
         else:
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
+                prompt_embeds=prompts[0],
+                negative_prompt_embeds=prompts[1],
                 height=tate[1],
                 width=yoko[1],
                 guidance_scale=gs,
@@ -1387,26 +1418,21 @@ def text2image15(
             else:
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
             plus_meta(meta_dict,image)
-            images.append(image)
             clear_output(True)
             print(memo)
-            show_img(images[:i+1])
+            display(image)
             del image
             torch.cuda.empty_cache()
 
-    del pipe,conditioning
+    del pipe,prompts
 
     if prog_ver==2 or prog_ver==1:
-        if torch.cuda.device_count()==1:
-            d="cuda:0"
-        else:
-            d="cuda:1"
         if os.path.isfile(vae_safe):
             pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
             pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-            pipe.to(d)
+            pipe.to("cuda")
         else:
-            pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to(d)
+            pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
             
         if sample=="Euler":
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
@@ -1531,14 +1557,19 @@ def text2image15(
         
         comple = CompelForSD(pipe)
         conditioning = comple(prompt, negative_prompt=n_prompt)
-        del comple
+        prompts=[conditioning.embeds,conditioning.negative_embeds]
+        del comple,conditioning
+        gc.collect()
+
+        pipe.text_encoder=None
+        pipe.tokenizer=None
 
         for i in range(pic_number):
             if prog_ver==2:
                 image = pipe(
                     eta=1.0,
-                    prompt_embeds=conditioning.embeds,
-                    negative_prompt_embeds=conditioning.negative_embeds,
+                    prompt_embeds=prompts[0],
+                    negative_prompt_embeds=prompts[1],
                     image=images[i],
                     guidance_scale=gs,
                     generator=torch.manual_seed(seed[i]),
@@ -1547,14 +1578,17 @@ def text2image15(
                     strength=ss,
                     pag_scale=pag
                 ).images[0]
-                image0=image.resize((yoko[1], tate[1]), resample=p)
+                if p=="esrgan":
+                    image0=uppipe.run(image,yoko[1], tate[1])
+                else:
+                    image0=image.resize((yoko[1], tate[1]), resample=p)
                 images[i]=image0
                 del image,image0
                 torch.cuda.empty_cache()
             image = pipe(
                 eta=1.0,
-                prompt_embeds=conditioning.embeds,
-                negative_prompt_embeds=conditioning.negative_embeds,
+                prompt_embeds=prompts[0],
+                negative_prompt_embeds=prompts[1],
                 image=images[i],
                 guidance_scale=gs,
                 generator=torch.manual_seed(seed[i]),
@@ -1569,16 +1603,12 @@ def text2image15(
             else:
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
             plus_meta(meta_dict,image)
-            images[i]=image
             clear_output(True)
             print(memo)
-            show_img(images[:i+1])
+            display(image)
             del image
             torch.cuda.empty_cache()
-        del pipe,conditioning
+        del pipe,prompts
     del images
     return seed
-
-    
-
-
+        
