@@ -115,9 +115,9 @@ def text2image(
     pos_emb=[],
     neg_emb=[],
     base_safe="base.safetensors",
-    vae_safe="vae.safetensors",
+    vae_safe="",
     pag=3.0,
-    j_or_p="j"
+    j_or_p="j",
     ):
     meta_dict={}
     memo="seed\n"
@@ -167,7 +167,7 @@ def text2image(
     clear_output(True)
     print(memo)
     
-    if os.path.isfile(vae_safe):
+    if os.path.exists(vae_safe):
         memo=memo+"vae : "+vae_safe+"\n"
         try:
             f=safetensors.safe_open(vae_safe, framework="pt", device="cpu")
@@ -215,11 +215,11 @@ def text2image(
                             meta_weight_list.append(float(j)*lora_weights[i])
                     else:
                         meta_weight_list.append(float(meta_weight)*lora_weights[i])
-                    del f,d
+                    del f,d,meta_id,meta_weight
                 except:
                     meta_id_list=list1
                     meta_weight_list=list2
-                
+                del list1,list2
             else:
                 memo=memo+line+".safetensors : "+str(lora_weights[i])+" ng"
                 clear_output(True)
@@ -232,6 +232,9 @@ def text2image(
             meta_weight_list=[]
         meta_dict["lora"]=str(meta_id_list)
         meta_dict["w"]=str(meta_weight_list)
+        del meta_id_list,meta_weight_list
+    else:
+        meta_dict["lora"]="[]"
     
     meta_embed_list=[]
     memo=memo+"Positive Embedding\n"
@@ -248,7 +251,7 @@ def text2image(
                     del f
                 except:
                     meta_embed_list=list1
-                
+                del list1
             else:
                 memo=memo+line+" ng"
                 clear_output(True)
@@ -271,6 +274,7 @@ def text2image(
                     del f
                 except:
                     meta_embed_list=list1
+                del list1
             else:
                 memo=memo+line+" ng"
                 clear_output(True)
@@ -279,6 +283,7 @@ def text2image(
     clear_output(True)
     print(memo)
     meta_dict["embed"]=str(meta_embed_list)
+    del meta_embed_list
 
     if t=="v":
         tate=[800,1280]
@@ -308,10 +313,12 @@ def text2image(
 
             yoko=[iw,ow]
             tate=[ih,oh]
+            del iw,ow,ih,oh
         else:
             print("t setting is error.")
             print(" initial width, output width, initial height, output height")
             return []
+        del t_list
 
     p="esrgan"
     if isinstance(Interpolation, int):
@@ -337,14 +344,26 @@ def text2image(
     del t
     gc.collect()
 
+    sd=load_file(base_safe)
+    is_sdxl="conditioner.embedders.1.model.transformer.resblocks.9.mlp.c_proj.weight" in sd
+    del sd
+    gc.collect()
+
     dtype=torch.float16
-    if os.path.isfile(vae_safe):
-        pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
-        pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-        pipe.to("cuda")
+    if is_sdxl:
+        if os.path.isfile(vae_safe):
+            pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
+            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+        else:
+            pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
     else:
-        pipe = StableDiffusionXLPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
-        
+        if os.path.isfile(vae_safe):
+            pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
+            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+        else:
+            pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
+    pipe.to("cuda")
+
     sgm_dict={}
     sgm_dict["use_karras_sigmas"]=False
     sgm_dict["use_exponential_sigmas"]=False
@@ -557,26 +576,34 @@ def text2image(
     if pos_emb!=[]:
         for line in pos_emb:
             key=os.path.basename(line).replace(".safetensors","")
-            state_dict = load_file(line)
-            pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
-            pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
-            del state_dict
+            if is_sdxl:
+                state_dict = load_file(line)
+                pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
+                pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
+                del state_dict
+            else:
+                pipe.load_textual_inversion(".", weight_name=line, token=key)
             prompt = prompt+","+key
             memo=memo+line+" is loaded.\n"
             clear_output(True)
             print(memo)
+            del key
 
     if neg_emb!=[]:
         for line in neg_emb:
             key=os.path.basename(line).replace(".safetensors","")
-            state_dict = load_file(line)
-            pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
-            pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
-            del state_dict
+            if is_sdxl:
+                state_dict = load_file(line)
+                pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
+                pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
+                del state_dict
+            else:
+                pipe.load_textual_inversion(".", weight_name=line, token=key)
             n_prompt=n_prompt+","+key
             memo=memo+line+" is loaded.\n"
             clear_output(True)
             print(memo)
+            del key
     
     memo=memo+"prompt\n"+prompt+"\n"
     memo=memo+"negative_prompt\n"+n_prompt+"\n"
@@ -585,12 +612,19 @@ def text2image(
     clear_output(True)
     print(memo)
 
-    pipe.enable_vae_tiling()
+    pipe.vae.enable_tiling()
     pipe.enable_xformers_memory_efficient_attention()
     
-    comple = CompelForSDXL(pipe)
+    if is_sdxl:
+        comple = CompelForSDXL(pipe)
+    else:
+        comple = CompelForSD(pipe)
+
     conditioning = comple(prompt, negative_prompt=n_prompt)
-    prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+    if is_sdxl:
+        prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+    else:
+        prompts=[conditioning.embeds,conditioning.negative_embeds]
     del comple,conditioning
     gc.collect()
 
@@ -599,9 +633,10 @@ def text2image(
 
     images=[]
     pipe.text_encoder=None
-    pipe.text_encoder_2=None
     pipe.tokenizer=None
-    pipe.tokenizer_2=None
+    if is_sdxl:
+        pipe.text_encoder_2=None
+        pipe.tokenizer_2=None
 
     if p=="esrgan":
         uppipe=imgup(Interpolation)
@@ -609,19 +644,34 @@ def text2image(
 
     for i in range(pic_number):   
         if prog_ver==2 or prog_ver==1:
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                pooled_prompt_embeds=prompts[1],
-                negative_prompt_embeds=prompts[2],
-                negative_pooled_prompt_embeds=prompts[3],
-                height=tate[0],
-                width=yoko[0],
-                guidance_scale=gs,
-                num_inference_steps=f_step,
-                clip_skip=cs,generator=torch.manual_seed(seed[i]),
-                pag_scale=pag
-            ).images[0]
+            if is_sdxl:
+                image = pipe(
+                    eta=1.0,
+                    prompt_embeds=prompts[0],
+                    pooled_prompt_embeds=prompts[1],
+                    negative_prompt_embeds=prompts[2],
+                    negative_pooled_prompt_embeds=prompts[3],
+                    height=tate[0],
+                    width=yoko[0],
+                    guidance_scale=gs,
+                    num_inference_steps=f_step,
+                    clip_skip=cs,
+                    generator=torch.manual_seed(seed[i]),
+                    pag_scale=pag
+                ).images[0]
+            else:
+                image = pipe(
+                    eta=1.0,
+                    prompt_embeds=prompts[0],
+                    negative_prompt_embeds=prompts[1],
+                    height=tate[0],
+                    width=yoko[0],
+                    guidance_scale=gs,
+                    num_inference_steps=f_step,
+                    clip_skip=cs,
+                    generator=torch.manual_seed(seed[i]),
+                    pag_scale=pag
+                ).images[0]
             if prog_ver==2:
                 if p=="esrgan":
                     image0=uppipe.run(image,int(sum(yoko)/2), int(sum(tate)/2))
@@ -639,20 +689,34 @@ def text2image(
                 del image,image0
                 torch.cuda.empty_cache()
         else:
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                pooled_prompt_embeds=prompts[1],
-                negative_prompt_embeds=prompts[2],
-                negative_pooled_prompt_embeds=prompts[3],
-                height=tate[1],
-                width=yoko[1],
-                guidance_scale=gs,
-                num_inference_steps=step,
-                clip_skip=cs,
-                generator=torch.manual_seed(seed[i]),
-                pag_scale=pag
-            ).images[0]
+            if is_sdxl:
+                image = pipe(
+                    eta=1.0,
+                    prompt_embeds=prompts[0],
+                    pooled_prompt_embeds=prompts[1],
+                    negative_prompt_embeds=prompts[2],
+                    negative_pooled_prompt_embeds=prompts[3],
+                    height=tate[1],
+                    width=yoko[1],
+                    guidance_scale=gs,
+                    num_inference_steps=step,
+                    clip_skip=cs,
+                    generator=torch.manual_seed(seed[i]),
+                    pag_scale=pag
+                ).images[0]
+            else:
+                image = pipe(
+                    eta=1.0,
+                    prompt_embeds=prompts[0],
+                    negative_prompt_embeds=prompts[1],
+                    height=tate[1],
+                    width=yoko[1],
+                    guidance_scale=gs,
+                    num_inference_steps=step,
+                    clip_skip=cs,
+                    generator=torch.manual_seed(seed[i]),
+                    pag_scale=pag
+                ).images[0]
             meta_dict["se"]=str(seed[i])
             if j_or_p=="j":
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".jpg"
@@ -664,16 +728,25 @@ def text2image(
             display(image)
             del image
             torch.cuda.empty_cache()
+        gc.collect()
 
     del pipe,prompts
+    gc.collect()
 
     if prog_ver==2 or prog_ver==1:
-        if os.path.isfile(vae_safe):
-            pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
-            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-            pipe.to("cuda")
+        if is_sdxl:
+            if os.path.isfile(vae_safe):
+                pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
+                pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+            else:
+                pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
         else:
-            pipe = StableDiffusionXLPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
+            if os.path.isfile(vae_safe):
+                pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
+                pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
+            else:
+                pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
+        pipe.to("cuda")
             
         if sample=="Euler":
             pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
@@ -781,38 +854,88 @@ def text2image(
         if pos_emb!=[]:
             for line in pos_emb:
                 key=os.path.basename(line).replace(".safetensors","")
-                state_dict = load_file(line)
-                pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
-                pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
-                del state_dict
+                if is_sdxl:
+                    state_dict = load_file(line)
+                    pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
+                    pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
+                    del state_dict,key
+                else:
+                    pipe.load_textual_inversion(".", weight_name=line, token=key)
+                    del key
 
         if neg_emb!=[]:
             for line in neg_emb:
                 key=os.path.basename(line).replace(".safetensors","")
-                state_dict = load_file(line)
-                pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
-                pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
-                del state_dict
+                if is_sdxl:
+                    state_dict = load_file(line)
+                    pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=pipe.text_encoder_2,tokenizer=pipe.tokenizer_2,torch_dtype=dtype)
+                    pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=pipe.text_encoder,tokenizer=pipe.tokenizer,torch_dtype=dtype)
+                    del state_dict,key
+                else:
+                    pipe.load_textual_inversion(".", weight_name=line, token=key)
+                    del key
 
         clear_output(True)
         print(memo)
 
-        pipe.enable_vae_tiling()
+        pipe.vae.enable_tiling()
         pipe.enable_xformers_memory_efficient_attention()
-                
-        comple = comple = CompelForSDXL(pipe)
+              
+        if is_sdxl:  
+            comple = CompelForSDXL(pipe)
+        else:
+            comple = CompelForSD(pipe)
         conditioning = comple(prompt, negative_prompt=n_prompt)
-        prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+        if is_sdxl:
+            prompts=[conditioning.embeds,conditioning.pooled_embeds,conditioning.negative_embeds,conditioning.negative_pooled_embeds]
+        else:
+            prompts=[conditioning.embeds,conditioning.negative_embeds]
         del comple,conditioning
         gc.collect()
 
         pipe.text_encoder=None
-        pipe.text_encoder_2=None
         pipe.tokenizer=None
-        pipe.tokenizer_2=None
-
+        if is_sdxl:
+            pipe.text_encoder_2=None
+            pipe.tokenizer_2=None
         for i in range(pic_number):
             if prog_ver==2:
+                if is_sdxl:
+                    image = pipe(
+                        eta=1.0,
+                        prompt_embeds=prompts[0],
+                        pooled_prompt_embeds=prompts[1],
+                        negative_prompt_embeds=prompts[2],
+                        negative_pooled_prompt_embeds=prompts[3],
+                        image=images[i],
+                        guidance_scale=gs,
+                        generator=torch.manual_seed(seed[i]),
+                        num_inference_steps=int((step+f_step)/2/ss)+1,
+                        clip_skip=cs,
+                        strength=ss,
+                        pag_scale=pag
+                    ).images[0]
+                else:
+                    image = pipe(
+                        eta=1.0,
+                        prompt_embeds=prompts[0],
+                        negative_prompt_embeds=prompts[1],
+                        image=images[i],
+                        guidance_scale=gs,
+                        generator=torch.manual_seed(seed[i]),
+                        num_inference_steps=int((step+f_step)/2/ss)+1,
+                        clip_skip=cs,
+                        strength=ss,
+                        pag_scale=pag
+                    ).images[0]
+                if p=="esrgan":
+                    image0=uppipe.run(image,yoko[1], tate[1])
+                else:
+                    image0=image.resize((yoko[1], tate[1]), resample=p)
+                images[i]=image0
+                del image,image0
+                torch.cuda.empty_cache()
+            if is_sdxl:
                 image = pipe(
                     eta=1.0,
                     prompt_embeds=prompts[0],
@@ -822,750 +945,12 @@ def text2image(
                     image=images[i],
                     guidance_scale=gs,
                     generator=torch.manual_seed(seed[i]),
-                    num_inference_steps=int((step+f_step)/2/ss)+1,
+                    num_inference_steps=int(step/ss)+1,
                     clip_skip=cs,
                     strength=ss,
                     pag_scale=pag
                 ).images[0]
-                if p=="esrgan":
-                    image0=uppipe.run(image,yoko[1], tate[1])
-                else:
-                    image0=image.resize((yoko[1], tate[1]), resample=p)
-                images[i]=image0
-                del image,image0
-                torch.cuda.empty_cache()
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                pooled_prompt_embeds=prompts[1],
-                negative_prompt_embeds=prompts[2],
-                negative_pooled_prompt_embeds=prompts[3],
-                image=images[i],
-                guidance_scale=gs,
-                generator=torch.manual_seed(seed[i]),
-                num_inference_steps=int(step/ss)+1,
-                clip_skip=cs,
-                strength=ss,
-                pag_scale=pag
-            ).images[0]
-            meta_dict["se"]=str(seed[i])
-            if j_or_p=="j":
-                meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".jpg"
             else:
-                meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
-            plus_meta(meta_dict,image)
-            clear_output(True)
-            print(memo)
-            display(image)
-            del image
-            torch.cuda.empty_cache()
-        del pipe,prompts
-    del images
-    return seed
-
-def text2image15(
-    loras=[],
-    lora_weights=[],
-    prompt = "",
-    n_prompt = "",
-    t="v",
-    prog_ver=2,
-    pic_number=10,
-    gs=7,
-    f_step=10,
-    step=30,
-    ss=0.6,
-    cs=2,
-    Interpolation=3,
-    sample=1,
-    sgm="",
-    seed=0,
-    out_folder="data",
-    pos_emb=[],
-    neg_emb=[],
-    base_safe="base.safetensors",
-    vae_safe="vae.safetensors",
-    pag=3.0,
-    j_or_p="j"
-    ):
-    meta_dict={}
-    memo="seed\n"
-    if isinstance(seed, list):
-        pic_number=len(seed)
-        for i in range(pic_number):
-            try:
-                if int(seed[i])==0:
-                    seed[i]=random.randint(1, sys.maxsize)
-                else:
-                    seed[i]=int(seed[i])
-            except:
-                seed[i]=random.randint(1, sys.maxsize)
-            memo=memo+str(seed[i])+"\n"
-    else:
-        try:
-            if int(seed)==0:
-                seed=[]
-                for i in range(pic_number):
-                    seed.append(random.randint(1, sys.maxsize))
-            else:
-                seed=[int(seed)]
-                pic_number=1
-        except:
-            seed=[]
-            for i in range(pic_number):
-                seed.append(random.randint(1, sys.maxsize))
-        for i in range(pic_number):
-            memo=memo+str(seed[i])+"\n"
-    clear_output(True)
-    print(memo)
-            
-    if prog_ver!=1:
-        if prog_ver!=2:
-            prog_ver=0
-        
-    if not(os.path.isfile(base_safe)):
-        print("the checkpoint file does not exist.")
-        return []
-    memo=memo+"checkpoint : "+base_safe+"\n"
-    try:
-        f=safetensors.safe_open(base_safe, framework="pt", device="cpu")
-        meta_dict["ckpt"]=f.metadata()["id"]
-        del f
-    except:
-        meta_dict["ckpt"]=""
-    clear_output(True)
-    print(memo)
-    
-    if os.path.isfile(vae_safe):
-        memo=memo+"vae : "+vae_safe+"\n"
-        try:
-            f=safetensors.safe_open(vae_safe, framework="pt", device="cpu")
-            meta_dict["vae"]=f.metadata()["id"]
-            del f
-        except:
-            meta_dict["vae"]=""
-    else:
-        memo=memo+"vae : original vae"+"\n"
-        meta_dict["vae"]=""
-    clear_output(True)
-    print(memo)
-
-    if loras!=[]:    
-        if len(loras)!=len(lora_weights):
-            print("the number of lora does not equal the number of lora weight.")
-            return []
-        i=0
-        memo=memo+"lora : weight\n"
-        meta_id_list=[]
-        meta_weight_list=[]
-        for line in loras:
-            if line.endswith(".safetensors"):
-                line=line.replace(".safetensors","")
-            if os.path.isfile(line+".safetensors"):
-                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ok\n"
-                clear_output(True)
-                print(memo)
-                list1=meta_id_list
-                list2=meta_weight_list
-                try:
-                    f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
-                    d=f.metadata()
-                    meta_id=d["id"]
-                    if "," in meta_id:
-                        meta_id = meta_id.split(",")
-                        for j in meta_id:
-                            meta_id_list.append(int(j))
-                    else:
-                        meta_id_list.append(int(meta_id))
-                    meta_weight=d["weight"]
-                    if "," in meta_weight:
-                        meta_weight = meta_weight.split(",")
-                        for j in meta_weight:
-                            meta_weight_list.append(float(j)*lora_weights[i])
-                    else:
-                        meta_weight_list.append(float(meta_weight)*lora_weights[i])
-                    del f,d
-                except:
-                    meta_id_list=list1
-                    meta_weight_list=list2
-                
-            else:
-                memo=memo+line+".safetensors : "+str(lora_weights[i])+" ng"
-                clear_output(True)
-                print(memo)
-                return []
-            i=i+1
-
-        if len(meta_weight_list)!=len(meta_id_list):
-            meta_id_list=[]
-            meta_weight_list=[]
-        meta_dict["lora"]=str(meta_id_list)
-        meta_dict["w"]=str(meta_weight_list)
-    
-    meta_embed_list=[]
-    memo=memo+"Positive Embedding\n"
-    if pos_emb==[]:
-        memo=memo+"nothing\n"
-    else:
-        for line in pos_emb:
-            if os.path.isfile(line):
-                memo=memo+line+" ok\n"
-                list1=meta_embed_list
-                try:
-                    f=safetensors.safe_open(line, framework="pt", device="cpu")
-                    meta_embed_list.append(f.metadata()["id"])
-                    del f
-                except:
-                    meta_embed_list=list1
-                
-            else:
-                memo=memo+line+" ng"
-                clear_output(True)
-                print(memo)
-                return []
-    clear_output(True)
-    print(memo)
-                
-    memo=memo+"Negative Embedding\n"
-    if neg_emb==[]:
-        memo=memo+"nothing\n"
-    else:
-        for line in neg_emb:
-            if os.path.isfile(line):
-                memo=memo+line+" ok\n"
-                list1=meta_embed_list
-                try:
-                    f=safetensors.safe_open(line, framework="pt", device="cpu")
-                    meta_embed_list.append(f.metadata()["id"])
-                    del f
-                except:
-                    meta_embed_list=list1
-            else:
-                memo=memo+line+" ng"
-                clear_output(True)
-                print(memo)
-                return []
-    clear_output(True)
-    print(memo)
-    meta_dict["embed"]=str(meta_embed_list)
-
-    if t=="v":
-        tate=[800,1280]
-        yoko=[600,900]
-    elif t=="s":
-        tate=[800,1280]
-        yoko=[800,1280]
-    elif t=="h":
-        yoko=[800,1280]
-        tate=[600,960]
-    elif t=="vl":
-        tate=[800,1600]
-        yoko=[600,1200]
-    elif t=="sl":
-        tate=[800,1600]
-        yoko=[800,1600]
-    elif t=="hl":
-        yoko=[800,1600]
-        tate=[600,1200]
-    else:
-        t_list=t.split(",")
-        if len(t_list)==4:
-            iw=round(float(t_list[0])/8)*8
-            ow=round(float(t_list[1])/8)*8
-            ih=round(float(t_list[2])/8)*8
-            oh=round(float(t_list[3])/8)*8
-
-            yoko=[iw,ow]
-            tate=[ih,oh]
-        else:
-            print("t setting is error.")
-            print(" initial width, output width, initial height, output height")
-            return []
-
-    p="esrgan"
-    if isinstance(Interpolation, int):
-        if Interpolation==1:
-            p=Image.NEAREST
-            meta_dict["hum"]="NEAREST"
-        elif Interpolation==2:
-            p=Image.BOX
-            meta_dict["hum"]="BOX"
-        elif Interpolation==3:
-            p=Image.BILINEAR
-            meta_dict["hum"]="BILINEAR"
-        elif Interpolation==4:
-            p=Image.HAMMING
-            meta_dict["hum"]="HAMMING"
-        elif Interpolation==5:
-            p=Image.BICUBIC
-            meta_dict["hum"]="BICUBIC"
-        else:
-            p=Image.LANCZOS
-            meta_dict["hum"]="LANCZOS"
-
-    del t
-    gc.collect()
-
-    dtype=torch.float16
-    if os.path.isfile(vae_safe):
-        pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype)
-        pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-        pipe.to("cuda")
-    else:
-        pipe = StableDiffusionPAGPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
-        
-    sgm_dict={}
-    sgm_dict["use_karras_sigmas"]=False
-    sgm_dict["use_exponential_sigmas"]=False
-    sgm_dict["use_beta_sigmas"]=False
-    if sample in sgm_use:
-        if sgm=="Karras":
-            sgm_dict["timestep_spacing"]="linspace"
-            sgm_dict["use_karras_sigmas"]=True
-        elif sgm=="exponential":
-            sgm_dict["timestep_spacing"]="linspace"
-            sgm_dict["use_exponential_sigmas"]=True
-        elif sgm=="beta":
-            sgm_dict["timestep_spacing"]="linspace"
-            sgm_dict["use_beta_sigmas"]=True
-        elif sgm=="sgm_uniform" or sgm=="simple":
-            sgm_dict["timestep_spacing"]="trailing"
-        else:
-            sgm_dict["timestep_spacing"]="linspace"
-    else:
-        if sgm=="sgm_uniform" or sgm=="simple":
-            sgm_dict["timestep_spacing"]="trailing"
-        else:
-            sgm_dict["timestep_spacing"]="leading"
-
-    if sample=="Euler":
-        pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : Euler"
-        meta_dict["sa"]=sample
-    elif sample=="Euler a":
-        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : Euler a"
-        meta_dict["sa"]=sample
-    elif sample=="LMS":
-        pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : LMS"
-        meta_dict["sa"]=sample
-    elif sample=="Heun":
-        pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : Heun"
-        meta_dict["sa"]=sample
-    elif sample=="DPM2":
-        pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM2"
-        meta_dict["sa"]=sample
-    elif sample=="DPM2 a":
-        pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM2 a"
-        meta_dict["sa"]=sample
-    elif sample=="DPM++ 2M":
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM++ 2M"
-        meta_dict["sa"]=sample
-    elif sample=="DPM++ SDE":
-        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
-        algorithm_type="sde-dpmsolver++",
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM++ SDE"
-        meta_dict["sa"]=sample
-    elif sample=="DPM++":
-        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM++"
-        meta_dict["sa"]=sample
-    elif sample=="DPM++ 2M SDE":
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
-        algorithm_type="sde-dpmsolver++",
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM++ 2M SDE"
-        meta_dict["sa"]=sample
-    elif sample=="PLMS":
-        pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-        memo=memo+"scheduler : PLMS"
-        meta_dict["sa"]=sample
-    elif sample=="UniPC":
-        pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : UniPC"
-        meta_dict["sa"]=sample
-    elif sample=="LCM":
-        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-        memo=memo+"scheduler : LCM"
-        meta_dict["sa"]=sample
-    elif sample=="DPM++ 3M SDE":
-        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,
-        timestep_spacing=sgm_dict["timestep_spacing"],
-        use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-        use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-        use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-        )
-        memo=memo+"scheduler : DPM++ 3M SDE"
-        meta_dict["sa"]=sample
-    else:
-        pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-        memo=memo+"scheduler : DDIM"
-        meta_dict["sa"]="DDIM"
-
-    if sample in sgm_use:
-        if sgm=="Karras":
-            memo=memo+" "+sgm
-            meta_dict["sa"]=meta_dict["sa"]+" "+sgm
-        elif sgm=="exponential":
-            memo=memo+" "+sgm
-            meta_dict["sa"]=meta_dict["sa"]+" "+sgm
-        elif sgm=="beta":
-            memo=memo+" "+sgm
-            meta_dict["sa"]=meta_dict["sa"]+" "+sgm
-
-    if sgm=="sgm_uniform" or sgm=="simple":
-        memo=memo+" "+sgm
-        meta_dict["sa"]=meta_dict["sa"]+" "+sgm
-
-    memo=memo+"\n"
-    
-    memo=memo+"num_inference_steps : "+str(f_step)+"\n"
-    meta_dict["st"]=str(f_step)
-    memo=memo+"guidance_scale : "+str(gs)+"\n"
-    meta_dict["cf"]=str(gs)
-    memo=memo+"clip_skip : "+str(cs)+"\n"
-    meta_dict["cl"]=str(cs)
-    memo=memo+"pag_scale : "+str(pag)+"\n"
-    meta_dict["pag"]=str(pag)
-
-    if prog_ver!=0:
-        memo=memo+"Hires steps : "+str(step)+"\n"
-        meta_dict["hs"]=str(step)
-        memo=memo+"Denoising strength : "+str(ss)+"\n"
-        meta_dict["ds"]=str(ss)
-        memo=memo+"Hires upscale : "+str(yoko[1]/yoko[0])+"\n"
-        meta_dict["hu"]=str(yoko[1]/yoko[0])
-        if not(isinstance(Interpolation,int)):
-            if os.path.exists(Interpolation):
-                meta_dict["hum"]=os.path.basename(Interpolation)
-            else:
-                p=Image.BILINEAR
-                meta_dict["hum"]="BILINEAR"
-        memo=memo+"Hires upscaler : "+meta_dict["hum"]+"\n"
-    else:
-        meta_dict["hs"]=""
-        meta_dict["ds"]=""
-        meta_dict["hu"]=""
-        meta_dict["hum"]=""
-
-    clear_output(True)
-    print(memo)
-        
-    if loras!=[]:
-        i=0
-        for line in loras:
-            if line.endswith(".safetensors"):
-                line=line.replace(".safetensors","")
-            pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
-            memo=memo+line+".safetensors is loaded.\n"
-            clear_output(True)
-            print(memo)
-            pipe.fuse_lora(lora_scale= lora_weights[i])
-            pipe.unload_lora_weights()
-            i=i+1
-
-    if pos_emb!=[]:
-        for line in pos_emb:
-            key=os.path.basename(line).replace(".safetensors","")
-            pipe.load_textual_inversion(".", weight_name=line, token=key)
-            prompt = prompt+","+key
-            memo=memo+line+" is loaded.\n"
-            clear_output(True)
-            print(memo)
-
-    if neg_emb!=[]:
-        for line in neg_emb:
-            key=os.path.basename(line).replace(".safetensors","")
-            pipe.load_textual_inversion(".", weight_name=line, token=key)
-            n_prompt=n_prompt+","+key
-            memo=memo+line+" is loaded.\n"
-            clear_output(True)
-            print(memo)
-
-    memo=memo+"prompt\n"+prompt+"\n"
-    memo=memo+"negative_prompt\n"+n_prompt+"\n"
-    meta_dict["pr"]=prompt
-    meta_dict["ne"]=n_prompt
-
-    clear_output(True)
-    print(memo)
-        
-    pipe.enable_vae_tiling()
-    pipe.enable_xformers_memory_efficient_attention()
-    
-    comple = CompelForSD(pipe)
-    conditioning = comple(prompt, negative_prompt=n_prompt)
-    prompts=[conditioning.embeds,conditioning.negative_embeds]
-    del comple,conditioning
-    gc.collect()
-    
-    if not(os.path.isdir(out_folder)):
-        os.mkdir(out_folder)
-
-    images=[]
-    pipe.text_encoder=None
-    pipe.tokenizer=None
-
-    if p=="esrgan":
-        uppipe=imgup(Interpolation)
-    del Interpolation
-
-    for i in range(pic_number):
-        if prog_ver==2 or prog_ver==1:
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                negative_prompt_embeds=prompts[1],
-                height=tate[0],
-                width=yoko[0],
-                guidance_scale=gs,
-                num_inference_steps=f_step,
-                clip_skip=cs,
-                generator=torch.manual_seed(seed[i]),
-                pag_scale=pag
-            ).images[0]
-            if prog_ver==2:
-                if p=="esrgan":
-                    image0=uppipe.run(image,int(sum(yoko)/2), int(sum(tate)/2))
-                else:
-                    image0=image.resize((int(sum(yoko)/2), int(sum(tate)/2)), resample=p)
-                images.append(image0)
-                del image,image0
-                torch.cuda.empty_cache()
-            else:
-                if p=="esrgan":
-                    image0=uppipe.run(image,yoko[1], tate[1])
-                else:
-                    image0=image.resize((yoko[1], tate[1]), resample=p)
-                images.append(image0)
-                del image,image0
-                torch.cuda.empty_cache()
-        else:
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                negative_prompt_embeds=prompts[1],
-                height=tate[1],
-                width=yoko[1],
-                guidance_scale=gs,
-                num_inference_steps=step,
-                clip_skip=cs,
-                generator=torch.manual_seed(seed[i]),
-                pag_scale=pag
-            ).images[0]
-            meta_dict["se"]=str(seed[i])
-            if j_or_p=="j":
-                meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".jpg"
-            else:
-                meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".png"
-            plus_meta(meta_dict,image)
-            clear_output(True)
-            print(memo)
-            display(image)
-            del image
-            torch.cuda.empty_cache()
-
-    del pipe,prompts
-
-    if prog_ver==2 or prog_ver==1:
-        if os.path.isfile(vae_safe):
-            pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype)
-            pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=dtype)
-            pipe.to("cuda")
-        else:
-            pipe = StableDiffusionPAGImg2ImgPipeline.from_single_file(base_safe, torch_dtype=dtype).to("cuda")
-            
-        if sample=="Euler":
-            pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="Euler a":
-            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="LMS":
-            pipe.scheduler = LMSDiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="Heun":
-            pipe.scheduler = HeunDiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM2":
-            pipe.scheduler = KDPM2DiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM2 a":
-            pipe.scheduler = KDPM2AncestralDiscreteScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM++ 2M":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM++ SDE":
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
-            algorithm_type="sde-dpmsolver++",
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM++":
-            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="DPM++ 2M SDE":
-            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
-            algorithm_type="sde-dpmsolver++",
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="PLMS":
-            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-        elif sample=="UniPC":
-            pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        elif sample=="LCM":
-            pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-        elif sample=="DPM++ 3M SDE":
-            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config,
-            timestep_spacing=sgm_dict["timestep_spacing"],
-            use_karras_sigmas=sgm_dict["use_karras_sigmas"],
-            use_exponential_sigmas=sgm_dict["use_exponential_sigmas"],
-            use_beta_sigmas=sgm_dict["use_beta_sigmas"]
-            )
-        else:
-            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config,timestep_spacing=sgm_dict["timestep_spacing"])
-            
-        if loras!=[]:
-            i=0
-            for line in loras:
-                if line.endswith(".safetensors"):
-                    line=line.replace(".safetensors","")
-                pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=dtype)
-                pipe.fuse_lora(lora_scale= lora_weights[i])
-                pipe.unload_lora_weights()
-                i=i+1
-            
-        if pos_emb!=[]:
-            for line in pos_emb:
-                key=os.path.basename(line).replace(".safetensors","")
-                pipe.load_textual_inversion(".", weight_name=line, token=key)
-                prompt = prompt+","+key
-
-        if neg_emb!=[]:
-            for line in neg_emb:
-                key=os.path.basename(line).replace(".safetensors","")
-                pipe.load_textual_inversion(".", weight_name=line, token=key)
-                n_prompt=n_prompt+","+key
-
-        clear_output(True)
-        print(memo)
-            
-        pipe.enable_vae_tiling()
-        pipe.enable_xformers_memory_efficient_attention()
-        
-        comple = CompelForSD(pipe)
-        conditioning = comple(prompt, negative_prompt=n_prompt)
-        prompts=[conditioning.embeds,conditioning.negative_embeds]
-        del comple,conditioning
-        gc.collect()
-
-        pipe.text_encoder=None
-        pipe.tokenizer=None
-
-        for i in range(pic_number):
-            if prog_ver==2:
                 image = pipe(
                     eta=1.0,
                     prompt_embeds=prompts[0],
@@ -1573,30 +958,11 @@ def text2image15(
                     image=images[i],
                     guidance_scale=gs,
                     generator=torch.manual_seed(seed[i]),
-                    num_inference_steps=int((step+f_step)/2/ss)+1,
+                    num_inference_steps=int(step/ss)+1,
                     clip_skip=cs,
                     strength=ss,
                     pag_scale=pag
                 ).images[0]
-                if p=="esrgan":
-                    image0=uppipe.run(image,yoko[1], tate[1])
-                else:
-                    image0=image.resize((yoko[1], tate[1]), resample=p)
-                images[i]=image0
-                del image,image0
-                torch.cuda.empty_cache()
-            image = pipe(
-                eta=1.0,
-                prompt_embeds=prompts[0],
-                negative_prompt_embeds=prompts[1],
-                image=images[i],
-                guidance_scale=gs,
-                generator=torch.manual_seed(seed[i]),
-                num_inference_steps=int(step/ss)+1,
-                clip_skip=cs,
-                strength=ss,
-                pag_scale=pag
-            ).images[0]
             meta_dict["se"]=str(seed[i])
             if j_or_p=="j":
                 meta_dict["input"]=out_folder+"/"+str(i)+"_"+str(seed[i])+".jpg"
@@ -1608,8 +974,8 @@ def text2image15(
             display(image)
             del image
             torch.cuda.empty_cache()
+            gc.collect()
         del pipe,prompts
-    del images
+    del images,meta_dict,sgm_dict,memo
+    gc.collect()
     return seed
-        
-
