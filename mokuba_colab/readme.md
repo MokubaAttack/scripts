@@ -60,7 +60,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - step : int ( default : 20 ) It is Hires steps ( a parameter of hires.fix ).
 - ss : float ( default : 0.5 ) It is denoising_strength ( a parameter of hires.fix ).
 - cs : int ( default : 1 ) It is clip_skip ( a parameter of StableDiffusion ).
-- Interpolation : int ( default : 3 ) It is the interpolation method of the upscaling. If you input pth file of ESRGAN, images are upscaled by ESRGAN.
+- Interpolation : int or str ( default : 3 ) It is the interpolation method of the upscaling. If you input pth file of ESRGAN, images are upscaled by ESRGAN.
   - 1 : NEAREST
   - 2 : BOX
   - 3 : BILINEAR
