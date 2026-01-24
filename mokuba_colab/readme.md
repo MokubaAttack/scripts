@@ -60,7 +60,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - step : int ( default : 20 ) It is Hires steps ( a parameter of hires.fix ).
 - ss : float ( default : 0.5 ) It is denoising_strength ( a parameter of hires.fix ).
 - cs : int ( default : 1 ) It is clip_skip ( a parameter of StableDiffusion ).
-- Interpolation : int ( default : 3 ) It is the interpolation method of the upscaling.
+- Interpolation : int ( default : 3 ) It is the interpolation method of the upscaling. If you input pth file of ESRGAN, images are upscaled by ESRGAN.
   - 1 : NEAREST
   - 2 : BOX
   - 3 : BILINEAR
@@ -99,7 +99,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - return : int list ( error : [] ) It is the seed list.
   
-Output files are images( name : (index)_(the seed).png or (index)_(the seed).jpg ).  
+Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
 If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
 (Example)  
 lora file  
