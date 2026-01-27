@@ -142,6 +142,9 @@ def plus_meta(vs,img):
         if "vae" in vs:
             if vs["vae"]!="":
                 metadata=metadata+',{"type":"ae","modelVersionId":'+vs["vae"]+"}"
+        if "cont" in vs:
+            if vs["cont"]!="":
+                metadata=metadata+',{"type":"controlnet","modelVersionId":'+vs["cont"]+"}"
         metadata=metadata+'], Civitai metadata: {}'
 
         if "[," in metadata:
@@ -754,9 +757,11 @@ class mokupipe:
             if self.is_sdxl:
                 controlnet = ControlNetModel.from_pretrained("OzzyGT/SDXL_Controlnet_Tile_Realistic",torch_dtype=torch.float16,variant="fp16")
                 self.pipe=StableDiffusionXLControlNetPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16,controlnet=controlnet)
+                self.meta_dict["cont"]=str(370104)
             else:
                 controlnet = ControlNetModel.from_pretrained('lllyasviel/control_v11f1e_sd15_tile',torch_dtype=torch.float16)
                 self.pipe=StableDiffusionControlNetPAGInpaintPipeline.from_pipe(self.pipe,torch_dtype=torch.float16,controlnet=controlnet)
+                self.meta_dict["cont"]=str(67566)
         self.pipe.to("cuda")
         prompt=prompt+self.prompt_a
         n_prompt=n_prompt+self.n_prompt_a
@@ -962,7 +967,7 @@ class mokupipe:
         if self.upscaler!=None:
             self.meta_dict["hum"]=self.upmethod
         self.prompts=None
-        del_keys=["tum","se","input","ds","tu","css","pr","ne","st","cf","cl","pag","hs","tu"]
+        del_keys=["tum","se","input","ds","tu","css","pr","ne","st","cf","cl","pag","hs","tu","cont]
         for k in del_keys:
             if k in self.meta_dict:
                 del self.meta_dict[k]
@@ -1283,3 +1288,4 @@ def mokuup(
     del images,seed
     return pipe
     
+
