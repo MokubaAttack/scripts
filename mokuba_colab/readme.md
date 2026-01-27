@@ -31,7 +31,7 @@ import mokuba_colab
 ```
 ## explanations
 mokuba_colab.text2image(<br>
-loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pas. j_or_p<br>
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, p<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
@@ -92,7 +92,8 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
 - pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
 - j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
-- return : int list ( error : [] ) It is the seed list.
+- p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
+- return : mokupipe object 
   
 Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
 If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
