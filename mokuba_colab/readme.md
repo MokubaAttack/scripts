@@ -8,11 +8,6 @@ Next, run next code on Notebook.
 !pip install pyexiv2
 !pip install torchsde
 
-#In Kaggle
-!pip uninstall diffusers torch torchvision -y
-!pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu124
-!pip install diffusers==0.34.0
-#In Google
 !pip uninstall diffusers torch torchvision -y
 !pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu126
 !pip install diffusers==0.34.0
@@ -43,12 +38,12 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - prompt : str ( default : "" ) It is the prompt.
 - n_prompt : str (default : "" ) It is the negative prompt.
 - t : str ( default : "v" ) It is the output size of images. Normal mode needs about 3 minutes to make 1 image. Large mode needs about 5 minutes.
-  - v : vertically long ( 960-1280 )
-  - h : horizontally long ( 1280-960 )
-  - s : square ( 1280-1280 )
-  - vl : large mode ( 1200-1600 )
-  - hl : large mode ( 1600-1200 )
-  - sl : large mode ( 1600-1600 )
+  - v : vertically long ( 768,1024 )-( 1200,1600 )
+  - h : horizontally long ( 1024,768 )-( 1200,1600 )
+  - s : square ( 888,888 )-( 1384,1384 )
+  - vl : large mode ( 600,800 )-( 1200,1600 )
+  - hl : large mode ( 800,600 )-( 1600,1200 )
+  - sl : large mode ( 696,696 )-( 1384,1384 )
   - initial width, output width, initial height, output height : You may directly input it.
 - prog_ver : int ( default : 2 ) It is the working program version.
   - 0 : normal diffusers
