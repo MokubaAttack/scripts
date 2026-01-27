@@ -36,6 +36,7 @@ img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interp
 - img_path : str ( default : "" ) It is a path of a image that is upscaled.
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
+- up : float ( default : 2 ) It is the upscale.
 - pic_number : int ( default : 10 ) It is the number of the output images.
 - gs : float ( default : 7 ) It is guidance_scale ( a parameter of StableDiffusion ).
 - step : int ( default : 20 ) It is num_inference_steps ( a parameter of StableDiffusion ).
