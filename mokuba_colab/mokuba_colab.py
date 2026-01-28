@@ -33,9 +33,9 @@ class imgup:
             self.model = RealESRGAN(device, scale=4)
             self.model.load_weights(path)
             if os.path.exists(path):
-                self.path=path
+                self.path=os.path.basename(path)
             else:
-                self.path=os.getcwd()+'/sberbank-ai/Real-ESRGAN/RealESRGAN_x4.pth'
+                self.path='RealESRGAN_x4.pth'
         else:
             if path==1:
                 self.model=Image.NEAREST
@@ -1299,5 +1299,6 @@ def mokuup(
     del images,seed
     return pipe
     
+
 
 
