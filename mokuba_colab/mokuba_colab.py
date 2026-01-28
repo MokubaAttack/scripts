@@ -145,6 +145,10 @@ def plus_meta(vs,img):
         if "cont" in vs:
             if vs["cont"]!="":
                 metadata=metadata+',{"type":"controlnet","modelVersionId":'+vs["cont"]+"}"
+        if "up" in vs:
+            if vs["up"]!="":
+                metadata=metadata+',{"type":"upscaler","modelVersionId":'+vs["up"]+"}"
+                
         metadata=metadata+'], Civitai metadata: {}'
 
         if "[," in metadata:
@@ -486,6 +490,13 @@ class mokupipe:
         self.upscaler=imgup(path)
         self.upmethod=self.upscaler.get_method()
         self.meta_dict["hum"]=self.upscaler.get_method()
+        if not(isinstance(path,int)):
+            if os.path.exists(path):
+                sd=torch.load(path)
+                if "id" in sd:
+                    self.meta_dict["up"]=str(sd["id"].item())
+            else:
+                self.meta_dict["up"]=str(164898)
 
     def mkprompt(self,prompt,n_prompt):
         if self.pipe==None:
@@ -1288,4 +1299,5 @@ def mokuup(
     del images,seed
     return pipe
     
+
 
