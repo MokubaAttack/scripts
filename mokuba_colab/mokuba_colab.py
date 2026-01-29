@@ -29,7 +29,7 @@ sgm_use=[
 ]
 
 class imgup:
-    def __init__(self,path,scale=4):
+    def __init__(self,path):
         if not(isinstance(path,int)):
             if not(os.path.exists(path)):
                 path=os.getcwd()+'/upscaler/RealESRGAN_x4plus.pth'
@@ -61,6 +61,12 @@ class imgup:
                     if not("body."+str(i)+".rdb1.conv1.weight" in sd):
                         break
                 nb=i
+                if 3*4==sd["conv_first.weight"].size()[1]:
+                    scale=2
+                elif 3*16==sd["conv_first.weight"].size()[1]:
+                    scale=1
+                else:
+                    scale=4
                 net = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=nf, num_block=nb, num_grow_ch=32, scale=scale)
             elif "body.0.weight" in sd:
                 nf=sd["body.0.weight"].size()[0]
@@ -68,6 +74,10 @@ class imgup:
                     if not("body."+str(i*2+4)+".weight" in sd):
                         break
                 nc=i
+                for i in range(1,1000):
+                    if int(sd["body."+str(nc*2+2)+".weight"].size()[0])==int(3*(2**i)):
+                        break
+                scale=i
                 net=SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=nf, num_conv=nc, upscale=scale, act_type='prelu')
             else:
                 self.model,self.path=self.interpolation(6)
@@ -547,7 +557,6 @@ class mokupipe:
 
     def mkpipe_upscale(self,path):
         self.upscaler=imgup(path)
-        self.meta_dict["hum"],self.meta_dict["id"]=self.upscaler.get_method()
 
     def mkprompt(self,prompt,n_prompt):
         if self.pipe==None:
@@ -609,6 +618,9 @@ class mokupipe:
         memo=memo+"pag_scale : "+str(pag)+"\n"
         self.meta_dict["pag"]=str(pag)
         memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
+        for k in ["hs","ds","hu","hum","up","ccs","cont","tu","tum"]:
+            if k in self.meta_dict:
+                del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
         self.pipe.enable_xformers_memory_efficient_attention()
@@ -660,9 +672,6 @@ class mokupipe:
                     pag_scale=pag
                 ).images[0]
             if out_folder!="":
-                for k in ["hs","ds","hu","hum","up"]:
-                    if k in self.meta_dict:
-                        del self.meta_dict[k]
                 self.meta_dict["se"]=str(i)
                 if j_or_p=="j":
                     self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".jpg"
@@ -724,6 +733,9 @@ class mokupipe:
         memo=memo+"pag_scale : "+str(pag)+"\n"
         self.meta_dict["pag"]=str(pag)
         memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
+        for k in ["hs","ds","hu","hum","up","ccs","cont","tu","tum"]:
+            if k in self.meta_dict:
+                del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
         self.pipe.enable_xformers_memory_efficient_attention()
@@ -815,6 +827,9 @@ class mokupipe:
                 self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
             else:
                 self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
+            for k in ["cont","ccs"]:
+                if k in self.meta_dict:
+                    del self.meta_dict[k]
         else:
             if self.is_sdxl:
                 controlnet = ControlNetModel.from_pretrained("OzzyGT/SDXL_Controlnet_Tile_Realistic",torch_dtype=torch.float16,variant="fp16")
@@ -824,6 +839,7 @@ class mokupipe:
                 controlnet = ControlNetModel.from_pretrained('lllyasviel/control_v11f1e_sd15_tile',torch_dtype=torch.float16)
                 self.pipe=StableDiffusionControlNetPAGInpaintPipeline.from_pipe(self.pipe,torch_dtype=torch.float16,controlnet=controlnet)
                 self.meta_dict["cont"]=str(67566)
+            self.meta_dict["ccs"]=str(ccs)
         self.pipe.to("cuda")
         prompt=prompt+self.prompt_a
         n_prompt=n_prompt+self.n_prompt_a
@@ -858,6 +874,9 @@ class mokupipe:
         memo=memo+"pag_scale : "+str(pag)+"\n"
         self.meta_dict["pag"]=str(pag)
         memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
+        for k in ["hs","ds","hu","hum","up","tu","tum"]:
+            if k in self.meta_dict:
+                del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
         self.pipe.enable_xformers_memory_efficient_attention()
@@ -888,12 +907,9 @@ class mokupipe:
             self.meta_dict["ds"]=str(ss)
             memo1=memo1+"Tile upscale : "+str(x/images[j-1].width)+"\n"
             self.meta_dict["tu"]=str(x/images[j-1].width)
-            if "hum" in self.meta_dict):
-                del self.meta_dict["hum"]
-            self.meta_dict["tum"],self.meta_dict["id"]=self.upscaler.get_method()
+            self.meta_dict["tum"],self.meta_dict["up"]=self.upscaler.get_method()
             memo1=memo1+"Tile upscaler : "+self.meta_dict["tum"]+"\n"
             if ccs!=None:
-                self.meta_dict["ccs"]=str(ccs)
                 memo1=memo1+"controlnet_conditioning_scale : "+self.meta_dict["ccs"]+"\n"
             images[j-1]=self.upscaler.run(images[j-1],x,y)
             clear_output(True)
@@ -1348,6 +1364,7 @@ def mokuup(
     del images,seed
     return pipe
     
+
 
 
 
