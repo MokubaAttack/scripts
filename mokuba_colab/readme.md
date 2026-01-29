@@ -12,20 +12,20 @@ Next, run next code on Notebook.
 !pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu126
 !pip install diffusers==0.34.0
 
-!pip install py-real-esrgan
+!pip install realesrgan
 
-import requests,py_real_esrgan,os
+import requests,torch,os
 url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokuba_colab.py"
 path="mokuba_colab.py"
 urlData = requests.get(url).content
 with open(path ,mode='wb') as f:
   f.write(urlData)
 
-path=os.path.dirname(py_real_esrgan.__file__)+"/model.py"
-url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/realersgan/model_mod.py"
+path=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/realersgan/degradations_mod.py"
 urlData = requests.get(url).content
 with open(path ,mode='wb') as f:
-    f.write(urlData)
+  f.write(urlData)
 
 import mokuba_colab
 ```
