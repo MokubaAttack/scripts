@@ -547,15 +547,7 @@ class mokupipe:
 
     def mkpipe_upscale(self,path):
         self.upscaler=imgup(path)
-        self.upmethod=self.upscaler.get_method()
-        self.meta_dict["hum"]=self.upscaler.get_method()
-        if not(isinstance(path,int)):
-            if os.path.exists(path):
-                sd=torch.load(path)
-                if "id" in sd:
-                    self.meta_dict["up"]=str(sd["id"].item())
-            else:
-                self.meta_dict["up"]=str(164898)
+        self.meta_dict["hum"],self.meta_dict["id"]=self.upscaler.get_method()
 
     def mkprompt(self,prompt,n_prompt):
         if self.pipe==None:
@@ -668,10 +660,9 @@ class mokupipe:
                     pag_scale=pag
                 ).images[0]
             if out_folder!="":
-                self.meta_dict["hs"]=""
-                self.meta_dict["ds"]=""
-                self.meta_dict["hu"]=""
-                self.meta_dict["hum"]=""
+                for k in ["hs","ds","hu","hum","up"]:
+                    if k in self.meta_dict:
+                        del self.meta_dict[k]
                 self.meta_dict["se"]=str(i)
                 if j_or_p=="j":
                     self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".jpg"
@@ -758,6 +749,7 @@ class mokupipe:
                 self.meta_dict["ds"]=str(ss)
                 memo1=memo1+"Hires upscale : "+str(x/images[j-1].width)+"\n"
                 self.meta_dict["hu"]=str(x/images[j-1].width)
+                self.meta_dict["hum"],self.meta_dict["up"]=self.upscaler.get_method()
                 memo1=memo1+"Hires upscaler : "+self.meta_dict["hum"]+"\n"
                 images[j-1]=self.upscaler.run(images[j-1],x,y)
             else:
@@ -896,9 +888,9 @@ class mokupipe:
             self.meta_dict["ds"]=str(ss)
             memo1=memo1+"Tile upscale : "+str(x/images[j-1].width)+"\n"
             self.meta_dict["tu"]=str(x/images[j-1].width)
-            if not("tum" in self.meta_dict):
-                self.meta_dict["tum"]=self.meta_dict["hum"]
-                self.meta_dict["hum"]=""
+            if "hum" in self.meta_dict):
+                del self.meta_dict["hum"]
+            self.meta_dict["tum"],self.meta_dict["id"]=self.upscaler.get_method()
             memo1=memo1+"Tile upscaler : "+self.meta_dict["tum"]+"\n"
             if ccs!=None:
                 self.meta_dict["ccs"]=str(ccs)
@@ -1034,10 +1026,8 @@ class mokupipe:
         return images
 
     def deldiffusionparams(self):
-        if self.upscaler!=None:
-            self.meta_dict["hum"]=self.upmethod
         self.prompts=None
-        del_keys=["tum","se","input","ds","tu","css","pr","ne","st","cf","cl","pag","hs","tu","cont]
+        del_keys=["tum","se","input","ds","tu","css","pr","ne","st","cf","cl","pag","hs","hu","cont","up","hum"]
         for k in del_keys:
             if k in self.meta_dict:
                 del self.meta_dict[k]
@@ -1358,6 +1348,7 @@ def mokuup(
     del images,seed
     return pipe
     
+
 
 
 
