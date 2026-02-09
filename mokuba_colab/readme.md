@@ -28,8 +28,8 @@ shutil.rmtree("mokucola-0.1.0")
 import mokucola
 ```
 ## explanations
-mokucola.text2image(<br>
-loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, p, xf, ser, del_pipe<br>
+mokucola.mokucola(  
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, p, xf, ser, del_pipe  
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
