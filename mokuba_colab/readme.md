@@ -4,34 +4,30 @@ I make My Own Modules from the workflow that I use whenever I make images. My wo
 Change the runtime type to T4 GPU.  
 Next, run next code on Notebook.  
 ```
-!pip install compel
-!pip install pyexiv2
-!pip install torchsde
+import tarfile
+import requests
+import os
+urlData = requests.get("https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz").content
+with open("mokucola-0.1.0.tar.gz" ,mode='wb') as f:
+    f.write(urlData)
+with tarfile.open("mokucola-0.1.0.tar.gz", 'r:gz') as tar:
+    tar.extractall()
 
-!pip uninstall diffusers torch torchvision -y
-!pip install torch torchvision xformers --index-url https://download.pytorch.org/whl/cu126
-!pip install diffusers==0.34.0
+!pip install mokucola-0.1.0.tar.gz
+!pip install -r mokucola-0.1.0/requirements.txt
 
-!pip install realesrgan
+import torch
+urlData=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
+os.rename("mokucola-0.1.0/degradations.txt",urlData)
 
-import requests,torch,os
-url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokuba_colab.py"
-path="mokuba_colab.py"
-urlData = requests.get(url).content
-with open(path ,mode='wb') as f:
-  f.write(urlData)
+os.remove("mokucola-0.1.0.tar.gz")
+shutil.rmtree("mokucola-0.1.0")
 
-path=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
-url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/realersgan/degradations_mod.py"
-urlData = requests.get(url).content
-with open(path ,mode='wb') as f:
-  f.write(urlData)
-
-import mokuba_colab
+import mokucola
 ```
 ## explanations
-mokuba_colab.text2image(<br>
-loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, p<br>
+mokucola.text2image(<br>
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation,sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, p, xf, ser, del_pipe<br>
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
@@ -93,6 +89,9 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
 - j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
+- xf : bool ( default : False ) If you choice True, xformers are used.
+- ser : str ( default : "colab" ) In google colab, please input "colab". In kaggle, please input "kaggle".
+- del_pipe : bool ( default : True ) If you choice True, the mokupipe object is deleted and None is returned.
 - return : mokupipe object 
   
 Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
