@@ -7,6 +7,8 @@ Next, run next code on Notebook.
 import tarfile
 import requests
 import os
+import shutil
+
 urlData = requests.get("https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz").content
 with open("mokucola-0.1.0.tar.gz" ,mode='wb') as f:
     f.write(urlData)
