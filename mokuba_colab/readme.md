@@ -89,6 +89,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - base_safe : str ( default : "base.safetensors" ) It is the checkpoint file.
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
 - pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
+- url : str ( default : "" ) If you input the webhook url of discord, images are sent to discord.
 - j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
 - xf : bool ( default : False ) If you choice True, xformers are used.
