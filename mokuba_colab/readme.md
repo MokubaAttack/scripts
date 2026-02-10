@@ -7,23 +7,21 @@ Next, run next code on Notebook.
 import tarfile
 import requests
 import os
-import shutil
 
-urlData = requests.get("https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz").content
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz"
+res = requests.get(url).content
 with open("mokucola-0.1.0.tar.gz" ,mode='wb') as f:
-    f.write(urlData)
-with tarfile.open("mokucola-0.1.0.tar.gz", 'r:gz') as tar:
-    tar.extractall()
-
+    f.write(res)
 !pip install mokucola-0.1.0.tar.gz
-!pip install -r mokucola-0.1.0/requirements.txt
 
 import torch
-urlData=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
-os.rename("mokucola-0.1.0/degradations.txt",urlData)
+url=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
+with tarfile.open("mokucola-0.1.0.tar.gz", 'r:gz') as res:
+    with res.extractfile("mokucola-0.1.0/degradations.txt") as f:
+        with open(url,"wb") as t:
+            t.write(f.read())
 
 os.remove("mokucola-0.1.0.tar.gz")
-shutil.rmtree("mokucola-0.1.0")
 
 import mokucola
 ```
