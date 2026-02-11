@@ -29,10 +29,7 @@ import numpy
 import cv2
 from PIL import Image
 from safetensors.torch import load_file
-from IPython.display import (
-    clear_output,
-    display
-)
+from IPython.display import clear_output
 from compel import (
     CompelForSD,
     CompelForSDXL
@@ -41,6 +38,7 @@ from compel import (
 from .meta import plus_meta
 from .imgup import imgup
 from .discord import to_discord
+from .imgshow import imgshow
 
 sgm_use=[
     "Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
@@ -448,9 +446,9 @@ class mokupipe:
             j=j+1
             clear_output(True)
             print(memo)
-            for j2 in range(j-1):
-                print(str(j2+1))
-                display(images[j2])
+            if j>1:
+                imgshow(imgs=images)
+
             if self.is_sdxl:
                 image = self.pipe(
                     eta=1.0,
@@ -491,6 +489,9 @@ class mokupipe:
             images.append(image)
             del image
             torch.cuda.empty_cache()
+        clear_output(True)
+        print(memo)
+        imgshow(imgs=images)
         gc.collect()
         return images
 
@@ -575,9 +576,9 @@ class mokupipe:
                 self.meta_dict["ds"]=str(ss)
             clear_output(True)
             print(memo1)
-            for j2 in range(j-1):
-                print(str(j2+1))
-                display(images[j2])
+            if j>1:
+                imgshow(imgs=images)
+
             if self.is_sdxl:
                 image = self.pipe(
                     eta=1.0,
@@ -618,6 +619,9 @@ class mokupipe:
             images[j-1]=image
             del image
             torch.cuda.empty_cache()
+        clear_output(True)
+        print(memo1)
+        imgshow(imgs=images)
         gc.collect()
         return images
 
@@ -736,9 +740,8 @@ class mokupipe:
             images[j-1]=self.upscaler.run(images[j-1],x,y)
             clear_output(True)
             print(memo1)
-            for j2 in range(j-1):
-                print(str(j2+1))
-                display(Images[j2])
+            if j>1:
+                imgshow(imgs=images)
 
             if tile_size[0]>=8 and tile_size[1]>=8:
                 tile_w=round(tile_size[0]/8)*8
@@ -864,7 +867,10 @@ class mokupipe:
                 plus_meta(self.meta_dict,image)
                 if url!="":
                     to_discord(self.meta_dict["input"],url)
-            del image,final_result,result,weight_sum          
+            del image,final_result,result,weight_sum
+        clear_output(True)
+        print(memo1)
+        imgshow(imgs=images)    
         gc.collect()
         return images
 

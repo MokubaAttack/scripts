@@ -262,7 +262,6 @@ def mokuup(
     ser="colab",
     del_pipe=True
     ):
-
     memo="seed\n"
     if isinstance(seed, list):
         pic_number=len(seed)
