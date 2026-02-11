@@ -8,20 +8,13 @@ import tarfile
 import requests
 import os
 
-url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz"
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.1.tar.gz"
 res = requests.get(url).content
-with open("mokucola-0.1.0.tar.gz" ,mode='wb') as f:
+with open("mokucola-0.1.1.tar.gz" ,mode='wb') as f:
     f.write(res)
-!pip install mokucola-0.1.0.tar.gz
+!pip install mokucola-0.1.1.tar.gz
 
-import torch
-url=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
-with tarfile.open("mokucola-0.1.0.tar.gz", 'r:gz') as res:
-    with res.extractfile("mokucola-0.1.0/degradations.txt") as f:
-        with open(url,"wb") as t:
-            t.write(f.read())
-
-os.remove("mokucola-0.1.0.tar.gz")
+os.remove("mokucola-0.1.1.tar.gz")
 
 import mokucola
 ```
