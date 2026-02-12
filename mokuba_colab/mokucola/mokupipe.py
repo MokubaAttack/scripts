@@ -56,6 +56,21 @@ class mokupipe:
         self.meta_dict={}
         self.pipe=None
         self.upscaler=None
+        self.prompts=None
+        self.prompt=""
+        self.n_prompt=""
+        self.prompt_a=""
+        self.n_prompt_a=""
+
+        self.out_folder="output"
+        self.j_or_p="j"
+        self.url=""
+        self.si=True
+
+        self.dtype=torch.float16
+        self.xf=False
+        self.dev="cuda"
+
     def mkpipe(
         self,
         pos_emb=[],
@@ -94,18 +109,18 @@ class mokupipe:
         self.is_sdxl="conditioner.embedders.1.model.transformer.resblocks.9.mlp.c_proj.weight" in sd
 
         if self.is_sdxl:
-            self.pipe=StableDiffusionXLPAGPipeline.from_single_file(base_safe,torch_dtype=torch.float16)
+            self.pipe=StableDiffusionXLPAGPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
             print(self.meta_dict["ckpt_name"]+" is loaded.")
             if os.path.isfile(vae_safe):
-                self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=torch.float16)
+                self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=self.dtype)
                 print(self.meta_dict["vae_name"]+" is loaded.")
         else:
-            self.pipe=StableDiffusionPAGPipeline.from_single_file(base_safe,torch_dtype=torch.float16)
+            self.pipe=StableDiffusionPAGPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
             print(self.meta_dict["ckpt_name"]+" is loaded.")
             if os.path.isfile(vae_safe):
-                self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=torch.float16)
+                self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=self.dtype)
                 print(self.meta_dict["vae_name"]+" is loaded.")
-        self.pipe.to("cuda")
+        self.pipe.to(self.dev)
 
         self.meta_dict["sa"]=""
         sgm_dict={}
@@ -258,7 +273,7 @@ class mokupipe:
                 if line.endswith(".safetensors"):
                     line=line.replace(".safetensors","")
                 if os.path.exists(line+".safetensors"):
-                    self.pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=torch.float16)
+                    self.pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=self.dtype)
                     print(line+".safetensors is loaded.")
                     self.pipe.fuse_lora(lora_scale= lora_weights[i])
                     self.pipe.unload_lora_weights()
@@ -306,8 +321,8 @@ class mokupipe:
                     key=os.path.basename(line).replace(".safetensors","")
                     if self.is_sdxl:
                         state_dict = load_file(line)
-                        self.pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=self.pipe.text_encoder_2,tokenizer=self.pipe.tokenizer_2,torch_dtype=torch.float16)
-                        self.pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=self.pipe.text_encoder,tokenizer=self.pipe.tokenizer,torch_dtype=torch.float16)
+                        self.pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=self.pipe.text_encoder_2,tokenizer=self.pipe.tokenizer_2,torch_dtype=self.dtype)
+                        self.pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=self.pipe.text_encoder,tokenizer=self.pipe.tokenizer,torch_dtype=self.dtype)
                         del state_dict
                     else:
                         self.pipe.load_textual_inversion(".", weight_name=line, token=key)
@@ -333,8 +348,8 @@ class mokupipe:
                     key=os.path.basename(line).replace(".safetensors","")
                     if self.is_sdxl:
                         state_dict = load_file(line)
-                        self.pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=self.pipe.text_encoder_2,tokenizer=self.pipe.tokenizer_2,torch_dtype=torch.float16)
-                        self.pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=self.pipe.text_encoder,tokenizer=self.pipe.tokenizer,torch_dtype=torch.float16)
+                        self.pipe.load_textual_inversion(state_dict["clip_g"],token=key,text_encoder=self.pipe.text_encoder_2,tokenizer=self.pipe.tokenizer_2,torch_dtype=self.dtype)
+                        self.pipe.load_textual_inversion(state_dict["clip_l"],token=key,text_encoder=self.pipe.text_encoder,tokenizer=self.pipe.tokenizer,torch_dtype=self.dtype)
                         del state_dict
                     else:
                         self.pipe.load_textual_inversion(".", weight_name=line, token=key)
@@ -356,7 +371,7 @@ class mokupipe:
         del meta_embed_list
         self.meta_dict["pos"]=pos_emb
         self.meta_dict["neg"]=neg_emb
-        self.prompts=None
+        
         gc.collect()
         return 1
 
@@ -382,15 +397,31 @@ class mokupipe:
         gc.collect()
         return 1
 
-    def text2image(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,out_folder="",j_or_p="",url="",xf=False):
+    def set_outparams(self,out_folder="",j_or_p="j",url="",si=True):
+        self.out_folder=out_folder
+        self.j_or_p=j_or_p
+        self.url=url
+        self.si=si
+
+    def set_diffparams(self,dtype="f16",xf=False,dev="cuda"):
+        if dtype=="f32":
+            self.dtype=torch.float32
+        elif dtype=="bf16":
+            self.dtype=torch.bfloat16
+        else:
+            self.dtype=torch.float16
+        self.xf=xf
+        self.dev=dev
+
+    def text2image(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,out):
         if self.pipe==None:
             print("You must make a pipeline.")
             return []
         if self.is_sdxl:
-            self.pipe=StableDiffusionXLPAGPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
+            self.pipe=StableDiffusionXLPAGPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
         else:
-            self.pipe=StableDiffusionPAGPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
-        self.pipe.to("cuda")
+            self.pipe=StableDiffusionPAGPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+        self.pipe.to(self.dev)
         prompt=prompt+self.prompt_a
         n_prompt=n_prompt+self.n_prompt_a
         self.meta_dict["pr"]=prompt
@@ -428,7 +459,7 @@ class mokupipe:
                 del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
-        if xf:
+        if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
         
         if self.prompts==None:
@@ -438,15 +469,15 @@ class mokupipe:
 
         images=[]
 
-        if out_folder!="":
-            if not(os.path.exists(out_folder)):
-                os.makedirs(out_folder)
+        if out:
+            if not(os.path.exists(self.out_folder)):
+                os.makedirs(self.out_folder)
         j=0
         for i in seed:
             j=j+1
             clear_output(True)
             print(memo)
-            if j>1:
+            if j>1 and self.si:
                 imgshow(imgs=images)
 
             if self.is_sdxl:
@@ -477,33 +508,34 @@ class mokupipe:
                     generator=torch.manual_seed(i),
                     pag_scale=pag
                 ).images[0]
-            if out_folder!="":
+            if out:
                 self.meta_dict["se"]=str(i)
-                if j_or_p=="j":
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".jpg"
+                if self.j_or_p=="j":
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
                 else:
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".png"
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
                 plus_meta(self.meta_dict,image)
-                if url!="":
-                    to_discord(self.meta_dict["input"],url)
+                if self.url!="":
+                    to_discord(self.meta_dict["input"],self.url)
             images.append(image)
             del image
             torch.cuda.empty_cache()
         clear_output(True)
         print(memo)
-        imgshow(imgs=images)
+        if self.si:
+            imgshow(imgs=images)
         gc.collect()
         return images
 
-    def image2imageup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,out_folder="",j_or_p="",url="",xf=False):
+    def image2imageup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,out):
         if self.pipe==None:
             print("You must make a pipeline.")
             return []
         if self.is_sdxl:
-            self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
+            self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
         else:
-            self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
-        self.pipe.to("cuda")
+            self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+        self.pipe.to(self.dev)
         prompt=prompt+self.prompt_a
         n_prompt=n_prompt+self.n_prompt_a
         self.meta_dict["pr"]=prompt
@@ -544,7 +576,7 @@ class mokupipe:
                 del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
-        if xf:
+        if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
         
         if self.prompts==None:
@@ -552,9 +584,9 @@ class mokupipe:
         if self.prompt!=prompt or self.n_prompt!=n_prompt:
             self.mkprompt(prompt=prompt,n_prompt=n_prompt)
 
-        if out_folder!="":
-            if not(os.path.exists(out_folder)):
-                os.makedirs(out_folder)
+        if out:
+            if not(os.path.exists(self.out_folder)):
+                os.makedirs(self.out_folder)
         j=0
         for i in seed:
             j=j+1
@@ -576,7 +608,7 @@ class mokupipe:
                 self.meta_dict["ds"]=str(ss)
             clear_output(True)
             print(memo1)
-            if j>1:
+            if j>1 and self.si:
                 imgshow(imgs=images)
 
             if self.is_sdxl:
@@ -607,25 +639,26 @@ class mokupipe:
                     strength=ss,
                     pag_scale=pag
                 ).images[0]
-            if out_folder!="":
+            if out:
                 self.meta_dict["se"]=str(i)
-                if j_or_p=="j":
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".jpg"
+                if self.j_or_p=="j":
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
                 else:
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".png"
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
                 plus_meta(self.meta_dict,image)
-                if url!="":
-                    to_discord(self.meta_dict["input"],url)
+                if self.url!="":
+                    to_discord(self.meta_dict["input"],self.url)
             images[j-1]=image
             del image
             torch.cuda.empty_cache()
         clear_output(True)
         print(memo1)
-        imgshow(imgs=images)
+        if self.si:
+            imgshow(imgs=images)
         gc.collect()
         return images
 
-    def tileup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,out_folder="",j_or_p="",url="",ccs=None,tile_size=(0,0),ol=0,xf=False):
+    def tileup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,ccs=None,tile_size=(0,0),ol=0,out=True):
         if self.pipe==None:
             print("You must make a pipeline.")
             return []
@@ -649,23 +682,23 @@ class mokupipe:
 
         if ccs==None:
             if self.is_sdxl:
-                self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
+                self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
             else:
-                self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16)
+                self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
             for k in ["cont","ccs"]:
                 if k in self.meta_dict:
                     del self.meta_dict[k]
         else:
             if self.is_sdxl:
-                controlnet = ControlNetModel.from_pretrained("OzzyGT/SDXL_Controlnet_Tile_Realistic",torch_dtype=torch.float16,variant="fp16")
-                self.pipe=StableDiffusionXLControlNetPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=torch.float16,controlnet=controlnet)
+                controlnet = ControlNetModel.from_pretrained("OzzyGT/SDXL_Controlnet_Tile_Realistic",torch_dtype=self.dtype,variant="fp16")
+                self.pipe=StableDiffusionXLControlNetPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
                 self.meta_dict["cont"]=str(370104)
             else:
-                controlnet = ControlNetModel.from_pretrained('lllyasviel/control_v11f1e_sd15_tile',torch_dtype=torch.float16)
-                self.pipe=StableDiffusionControlNetPAGInpaintPipeline.from_pipe(self.pipe,torch_dtype=torch.float16,controlnet=controlnet)
+                controlnet = ControlNetModel.from_pretrained('lllyasviel/control_v11f1e_sd15_tile',torch_dtype=self.dtype)
+                self.pipe=StableDiffusionControlNetPAGInpaintPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
                 self.meta_dict["cont"]=str(67566)
             self.meta_dict["ccs"]=str(ccs)
-        self.pipe.to("cuda")
+        self.pipe.to(self.dev)
         prompt=prompt+self.prompt_a
         n_prompt=n_prompt+self.n_prompt_a
         self.meta_dict["pr"]=prompt
@@ -704,7 +737,7 @@ class mokupipe:
                 del self.meta_dict[k]
 
         self.pipe.vae.enable_tiling()
-        if xf:
+        if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
         
         if self.prompts==None:
@@ -712,9 +745,9 @@ class mokupipe:
         if self.prompt!=prompt or self.n_prompt!=n_prompt:
             self.mkprompt(prompt=prompt,n_prompt=n_prompt)
 
-        if out_folder!="":
-            if not(os.path.exists(out_folder)):
-                os.makedirs(out_folder)
+        if out:
+            if not(os.path.exists(self.out_folder)):
+                os.makedirs(self.out_folder)
 
         if ccs==None:
             x=round(x/8)*8
@@ -740,7 +773,7 @@ class mokupipe:
             images[j-1]=self.upscaler.run(images[j-1],x,y)
             clear_output(True)
             print(memo1)
-            if j>1:
+            if j>1 and self.si:
                 imgshow(imgs=images)
 
             if tile_size[0]>=8 and tile_size[1]>=8:
@@ -858,19 +891,20 @@ class mokupipe:
             image = Image.fromarray(final_result)
             images[j-1]=image
 
-            if out_folder!="":
+            if out:
                 self.meta_dict["se"]=str(i)
-                if j_or_p=="j":
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".jpg"
+                if self.j_or_p=="j":
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
                 else:
-                    self.meta_dict["input"]=out_folder+"/"+str(j)+"_"+str(i)+".png"
+                    self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
                 plus_meta(self.meta_dict,image)
-                if url!="":
-                    to_discord(self.meta_dict["input"],url)
+                if self.url!="":
+                    to_discord(self.meta_dict["input"],self.url)
             del image,final_result,result,weight_sum
         clear_output(True)
         print(memo1)
-        imgshow(imgs=images)    
+        if self.si:
+            imgshow(imgs=images)    
         gc.collect()
         return images
 

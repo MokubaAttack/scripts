@@ -36,9 +36,12 @@ def mokucola(
     j_or_p="j",
     url="",
     p=None,
+    dtype="f16",
+    dev="cuda",
     xf=False,
     ser="colab",
-    del_pipe=True
+    del_pipe=True,
+    si=True
     ):
     memo="seed\n"
     if isinstance(seed, list):
@@ -131,6 +134,18 @@ def mokucola(
         pipe=p
         pipe.deldiffusionparams()
 
+    pipe.set_diffparams(
+        dtype=dtype,
+        xf=xf,
+        dev=dev
+        )
+    pipe.set_outparams(
+        out_folder=out_folder,
+        j_or_p=j_or_p,
+        url=url,
+        si=si
+        )
+
     if prog_ver==0:
         images=pipe.text2image(
             prompt=prompt,
@@ -142,10 +157,7 @@ def mokucola(
             pag=pag,
             x=yoko[1],
             y=tate[1],
-            out_folder=out_folder,
-            url=url,
-            j_or_p=j_or_p,
-            xf=xf
+            out=True
         )
     else:
         images=pipe.text2image(
@@ -158,10 +170,7 @@ def mokucola(
             pag=pag,
             x=yoko[0],
             y=tate[0],
-            out_folder="",
-            url="",
-            j_or_p="",
-            xf=xf
+            out=False
         )
 
     if prog_ver!=0:
@@ -180,10 +189,7 @@ def mokucola(
             y=tate[1],
             ss=ss,
             images=images,
-            out_folder=out_folder,
-            j_or_p=j_or_p,
-            url=url,
-            xf=xf
+            out=True
         )
     elif prog_ver==2:
         images=pipe.image2imageup(
@@ -198,10 +204,7 @@ def mokucola(
             y=round((tate[0]+tate[1])/2/8)*8,
             ss=ss,
             images=images,
-            out_folder="",
-            j_or_p="",
-            url="",
-            xf=xf
+            out=False
         )
     
     if prog_ver==2:
@@ -217,10 +220,7 @@ def mokucola(
             y=tate[1],
             ss=ss,
             images=images,
-            out_folder=out_folder,
-            j_or_p=j_or_p,
-            url=url,
-            xf=xf
+            out=True
         )
 
     if url!="":
@@ -258,9 +258,12 @@ def mokuup(
     ccs=None,
     tile_size=(0,0),
     ol=0,
+    dtype="f16",
+    dev="cuda",
     xf=False,
     ser="colab",
-    del_pipe=True
+    del_pipe=True,
+    si=True
     ):
     memo="seed\n"
     if isinstance(seed, list):
@@ -331,6 +334,18 @@ def mokuup(
         pipe=p
         pipe.deldiffusionparams()
 
+    pipe.set_diffparams(
+        dtype=dtype,
+        xf=xf,
+        dev=dev
+        )
+    pipe.set_outparams(
+        out_folder=out_folder,
+        j_or_p=j_or_p,
+        url=url,
+        si=si
+        )
+
     pipe.mkpipe_upscale(Interpolation)
     images=pipe.tileup(
         prompt=prompt,
@@ -344,13 +359,10 @@ def mokuup(
         y=output_size[1],
         ss=ss,
         images=images,
-        out_folder=out_folder,
-        j_or_p=j_or_p,
-        url=url,
         ccs=ccs,
         tile_size=tile_size,
         ol=ol,
-        xf=xf
+        out=True
         )
 
     if url!="":
