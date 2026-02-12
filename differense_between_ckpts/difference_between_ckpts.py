@@ -116,108 +116,91 @@ def diff_ckpt(paths,out_path,dim,c,win=None):
         return
 
     temp_path=os.getcwd()+"/safe_temp"
-    try:
-        if os.path.exists(temp_path):
-            shutil.rmtree(temp_path)
-        os.mkdir(temp_path)
 
-        if win==None:
-            print("load "+paths[0])
-        else:
-            win["info"].update("load "+paths[0])
-        names0=mk_box(0,paths[0],temp_path,c)
-
-        if win==None:
-            print("load "+paths[1])
-        else:
-            win["info"].update("load "+paths[1])
-        names1=mk_box(1,paths[1],temp_path,c)
-
-        names=list(set(names0+names1))
-        sd={}
-        names_sum=len(names)
-        name_count=0
-
-        for name in names:
-            name_count=name_count+1
-            if win!=None:
-                win["info"].update("differ "+str(name_count)+"/"+str(names_sum))
-            else:
-                print("\rdiffer "+str(name_count)+"/"+str(names_sum),end="")
-            sd1=load_file(temp_path+"/0_"+name+".safetensors")
-            sd2=load_file(temp_path+"/1_"+name+".safetensors")
-            mat=(sd2[name]-sd1[name]).to(torch.float)
-
-            conv2d = len(mat.size()) == 4
-            kernel_size = None if not conv2d else mat.size()[2:4]
-            conv2d_3x3 = conv2d and kernel_size != (1, 1)
-            out_dim, in_dim = mat.size()[0:2]
-
-            if conv2d:
-                if conv2d_3x3:
-                    mat = mat.flatten(start_dim=1)
-                else:
-                    mat = mat.squeeze()
-
-            module_new_rank = dim
-            module_new_rank = min(module_new_rank, in_dim, out_dim)
-
-            try:
-                U, S, Vh = torch.linalg.svd(mat)
-
-                U = U[:, :module_new_rank]
-                S = S[:module_new_rank]
-                U = U @ torch.diag(S)
-
-                Vh = Vh[:module_new_rank, :]
-
-                dist = torch.cat([U.flatten(), Vh.flatten()])
-                hi_val = torch.quantile(dist, CLAMP_QUANTILE)
-                low_val = -hi_val
-
-                U = U.clamp(low_val, hi_val)
-                Vh = Vh.clamp(low_val, hi_val)
-
-                if conv2d:
-                    U = U.reshape(out_dim, module_new_rank, 1, 1)
-                    Vh = Vh.reshape(module_new_rank, in_dim, kernel_size[0], kernel_size[1])
-            except:
-                if win==None:
-                    print("")
-                    print(name)
-                else:
-                    win["RUN"].Update(disabled=False)
-                    win["info"].update("error "+name)
-                    notification.notify(title="error",message=name)
-                shutil.rmtree(temp_path)
-                return
-
-            up_weight = U
-            down_weight = Vh
-
-            sd[name + ".lora_up.weight"] = up_weight.to(torch.float16).contiguous()
-            sd[name + ".lora_down.weight"] = down_weight.to(torch.float16).contiguous()
-            sd[name + ".alpha"] = torch.tensor(module_new_rank, dtype=torch.float16)
-            del sd1,sd2,mat,up_weight,down_weight,U,S,Vh,dist,hi_val,low_val
-            gc.collect()
-        save_file(sd,out_path)
+    if os.path.exists(temp_path):
         shutil.rmtree(temp_path)
-        if win==None:
-            print("")
-            print("fin")
+    os.mkdir(temp_path)
+
+    if win==None:
+        print("load "+paths[0])
+    else:
+        win["info"].update("load "+paths[0])
+    names0=mk_box(0,paths[0],temp_path,c)
+
+    if win==None:
+        print("load "+paths[1])
+    else:
+        win["info"].update("load "+paths[1])
+    names1=mk_box(1,paths[1],temp_path,c)
+
+    names=list(set(names0+names1))
+    sd={}
+    names_sum=len(names)
+    name_count=0
+
+    for name in names:
+        name_count=name_count+1
+        if win!=None:
+            win["info"].update("differ "+str(name_count)+"/"+str(names_sum))
         else:
-            win["RUN"].Update(disabled=False)
-            win["info"].update("fin")
-            notification.notify(title="fin",message=out_path)
-    except:
-        if os.path.exists(temp_path):
-            shutil.rmtree(temp_path)
-        if win==None:
-            print("I failed in the output.")
-        else:
-            win["RUN"].Update(disabled=False)
-            win["info"].update("error")
-            notification.notify(title="error",message="I failed in the output.")
+            print("\rdiffer "+str(name_count)+"/"+str(names_sum),end="")
+        sd1=load_file(temp_path+"/0_"+name+".safetensors")
+        sd2=load_file(temp_path+"/1_"+name+".safetensors")
+        mat=(sd2[name]-sd1[name]).to(torch.float)
+
+        if torch.any(torch.isnan(mat)):
+            continue
+
+        conv2d = len(mat.size()) == 4
+        kernel_size = None if not conv2d else mat.size()[2:4]
+        conv2d_3x3 = conv2d and kernel_size != (1, 1)
+        out_dim, in_dim = mat.size()[0:2]
+
+        if conv2d:
+            if conv2d_3x3:
+                mat = mat.flatten(start_dim=1)
+            else:
+                mat = mat.squeeze()
+
+        module_new_rank = dim
+        module_new_rank = min(module_new_rank, in_dim, out_dim)
+
+        U, S, Vh = torch.linalg.svd(mat)
+
+        U = U[:, :module_new_rank]
+        S = S[:module_new_rank]
+        U = U @ torch.diag(S)
+
+        Vh = Vh[:module_new_rank, :]
+
+        dist = torch.cat([U.flatten(), Vh.flatten()])
+        hi_val = torch.quantile(dist, CLAMP_QUANTILE)
+        low_val = -hi_val
+
+        U = U.clamp(low_val, hi_val)
+        Vh = Vh.clamp(low_val, hi_val)
+
+        if conv2d:
+            U = U.reshape(out_dim, module_new_rank, 1, 1)
+            Vh = Vh.reshape(module_new_rank, in_dim, kernel_size[0], kernel_size[1])
+
+        up_weight = U
+        down_weight = Vh
+
+        sd[name + ".lora_up.weight"] = up_weight.to(torch.float16).contiguous()
+        sd[name + ".lora_down.weight"] = down_weight.to(torch.float16).contiguous()
+        sd[name + ".alpha"] = torch.tensor(module_new_rank, dtype=torch.float16)
+        del sd1,sd2,mat,up_weight,down_weight,U,S,Vh,dist,hi_val,low_val
+        gc.collect()
+    save_file(sd,out_path)
+    shutil.rmtree(temp_path)
+    if win==None:
+        print("")
+        print("fin")
+    else:
+        win["RUN"].Update(disabled=False)
+        win["info"].update("fin")
+        notification.notify(title="fin",message=out_path)
 
 if __name__=="__main__":
     import tkinter as tk
@@ -303,3 +286,4 @@ if __name__=="__main__":
                 pass
         
     window.close()
+
