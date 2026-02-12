@@ -7,29 +7,20 @@ Next, run next code on Notebook.
 import tarfile
 import requests
 import os
-import shutil
 
-urlData = requests.get("https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.0.tar.gz").content
-with open("mokucola-0.1.0.tar.gz" ,mode='wb') as f:
-    f.write(urlData)
-with tarfile.open("mokucola-0.1.0.tar.gz", 'r:gz') as tar:
-    tar.extractall()
+url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.1.tar.gz"
+res = requests.get(url).content
+with open("mokucola-0.1.1.tar.gz" ,mode='wb') as f:
+    f.write(res)
+!pip install mokucola-0.1.1.tar.gz
 
-!pip install mokucola-0.1.0.tar.gz
-!pip install -r mokucola-0.1.0/requirements.txt
-
-import torch
-urlData=os.path.dirname(torch.__file__).replace("/torch","/basicsr/data/degradations.py")
-os.rename("mokucola-0.1.0/degradations.txt",urlData)
-
-os.remove("mokucola-0.1.0.tar.gz")
-shutil.rmtree("mokucola-0.1.0")
+os.remove("mokucola-0.1.1.tar.gz")
 
 import mokucola
 ```
 ## explanations
 mokucola.mokuup(  
-img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interpolation, sample, sgm, seed, pos_emb, neg_emb, pag, url, out_folder, j_or_p, p, prompt, n_prompt, ccs, tile_size, ol, xf, ser, del_pipe  
+img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interpolation, sample, sgm, seed, pos_emb, neg_emb, pag, url, out_folder, j_or_p, p, prompt, n_prompt, ccs, tile_size, ol, dtype, dev, xf, ser, del_pipe, si  
 )  
 - img_path : str ( default : "" ) It is a path of a image that is upscaled.
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
@@ -84,9 +75,12 @@ img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interp
 - ccs : float ( default : None ) It is controlnet_conditioning_scale ( a parameter of StableDiffusion ). If you input None, controlnet tile are not used.
 - tile_size : tuple ( default : (0,0) ) ( tile's width, tile's height ) When you input (0,0), they are selected automatically.
 - ol : int ( default : 0 ) It is overlap size. When you input 0, it is selected automatically.
+- dtype : str ( default : "f16" ) It is the calculation accuracy. Choices are f16, f32 and bf16.
+- dev : str ( default : "cuda" ) It is the device that calculates. Choices are cuda and cpu.
 - xf : bool ( default : False ) If you choice True, xformers are used.
 - ser : str ( default : "colab" ) In google colab, please input "colab". In kaggle, please input "kaggle".
 - del_pipe : bool ( default : True ) If you choice True, the mokupipe object is deleted and None is returned.
+- si : bool ( default : True ) If you choice True, output images are shown in the output window.
 - return : mokupipe object
 
 Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
