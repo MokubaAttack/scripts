@@ -4,17 +4,7 @@ I make My Own Modules from the workflow that I use whenever I make images. My wo
 Change the runtime type to T4 GPU.  
 Next, run next code on Notebook.  
 ```
-import tarfile
-import requests
-import os
-
-url="https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.1.tar.gz"
-res = requests.get(url).content
-with open("mokucola-0.1.1.tar.gz" ,mode='wb') as f:
-    f.write(res)
-!pip install mokucola-0.1.1.tar.gz
-
-os.remove("mokucola-0.1.1.tar.gz")
+!pip install https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-0.1.128.tar.gz
 
 import mokucola
 ```
