@@ -110,131 +110,132 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 seed=random.randint(1,2**31-1)
             numpy.random.seed(seed)
 
-        for k in data_dict:
-            key_count=key_count+1
-            if win!=None:
-                win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
-            else:
-                print("\rmerging "+str(key_count)+"/"+str(dict_sum),end="")
-
-            out_dict={}
-            if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
-                t1=load_file(os.getcwd()+"/safe_temp/1_"+k+".safetensors")[k].to(torch.float32)
-            else:
-                t1=torch.zeros(data_dict[k]).to(torch.float32)
-
-            if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
-                t2=load_file(os.getcwd()+"/safe_temp/2_"+k+".safetensors")[k].to(torch.float32)
-            else:
-                out_dict[k]=t1.to(torch.float16)
-                save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-                del out_dict
-                del_safe(k)
-                continue
-
-            if k.startswith("model.diffusion_model.middle_block."):
-                w=weights[10][1]
-            elif k.startswith("model.diffusion_model.input_blocks."):
-                j=int(k.split(".")[3])
-                w=weights[1+j][1]
-            elif k.startswith("model.diffusion_model.output_blocks."):
-                j=int(k.split(".")[3])
-                w=weights[11+j][1]
-            elif k.startswith("model.diffusion_model.label_emb.") or k.startswith("model.diffusion_model.time_embed."):
-                w=weights[1][1]
-            elif k.startswith("model.diffusion_model.out."):
-                w=weights[19][1]
-            else:
-                if k.startswith("first_stage_model."):
-                    if v==0:
-                        out_dict[k]=t1.to(torch.float16)
-                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-                        del out_dict
-                        del_safe(k)
-                        continue
-                    elif v==1:
-                        out_dict[k]=t2.to(torch.float16)
-                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-                        del out_dict
-                        del_safe(k)
-                        continue
-                    else:
-                        w=weights[0][1]
+        with torch.no_grad():
+            for k in data_dict:
+                key_count=key_count+1
+                if win!=None:
+                    win["info"].update("merging "+str(key_count)+"/"+str(dict_sum))
                 else:
-                    w=weights[0][1]
-
-            if t1.dim() in (1, 2):
-                dw = t2.shape[-1] - t1.shape[-1]
-                if dw > 0:
-                    t1 = torch.nn.functional.pad(t1, (0, dw, 0, 0))
-                elif dw < 0: 
-                    t2 = torch.nn.functional.pad(t2, (0, -dw, 0, 0))
-                dh = t2.shape[0] - t1.shape[0]
-                if dh > 0:
-                    t1 = torch.nn.functional.pad(t1, (0, 0, 0, dh))
-                elif dh < 0:
-                    t2 = torch.nn.functional.pad(t2, (0, 0, 0, -dh))
-                del dw,dh
-
-            if mode=="dare":
-                dt=t2-t1
-                m = torch.from_numpy(numpy.random.binomial(1, dp, dt.shape)).to(torch.float32)
-                out_dict[k] = (t1 + w * m * dt / (1 - dp)).to(torch.float16)
-                del dt,m
-
-            elif mode=="normal":
-                out_dict[k]=((1-w)*t1+w*t2).to(torch.float16)
-
-            elif mode=="mokuba":
-                dt=t2-t1
-                dt_mean=torch.mean(dt).item()
-                dt_std=torch.std(dt).item()
-                dt[dt>dt_mean+2*w*dt_std]=dt_mean+2*w*dt_std
-                dt[dt<dt_mean-2*w*dt_std]=dt_mean-2*w*dt_std
-                out_dict[k] = (t1 + w * dt).to(torch.float16)
-                del dt,dt_mean,dt_std
-
-            elif "tensor" in mode:
-                w1=(1-w)/2
-                w2=w
-                w1=round(t1.size()[0]*w1)
-                w2=round(t1.size()[0]*(w1+w2))
-                if w1==0:
-                    out_dict[k]=t2.to(torch.float16)
-                    save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-                    del w,out_dict,t1,t2,w1,w1
-                    del_safe(k)
-                    continue
-                elif w2==0:
+                    print("\rmerging "+str(key_count)+"/"+str(dict_sum),end="")
+    
+                out_dict={}
+                if os.path.exists(os.getcwd()+"/safe_temp/1_"+k+".safetensors"):
+                    t1=load_file(os.getcwd()+"/safe_temp/1_"+k+".safetensors")[k].to(torch.float32)
+                else:
+                    t1=torch.zeros(data_dict[k]).to(torch.float32)
+    
+                if os.path.exists(os.getcwd()+"/safe_temp/2_"+k+".safetensors"):
+                    t2=load_file(os.getcwd()+"/safe_temp/2_"+k+".safetensors")[k].to(torch.float32)
+                else:
                     out_dict[k]=t1.to(torch.float16)
                     save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-                    del w,out_dict,t1,t2,w1,w1
+                    del out_dict
                     del_safe(k)
                     continue
-                if mode=="tensor1":
-                    if t1.dim()==1:
-                        t1[w1:w2]=t2[w1:w2]
-                    elif t1.dim()==2:
-                        t1[w1:w2,:]=t2[w1:w2,:]
-                    elif t1.dim()==3:
-                        t1[w1:w2,:,:]=t2[w1:w2,:,:]
-                    elif t1.dim()==4:
-                        t1[w1:w2,:,:,:]=t2[w1:w2,:,:,:]
+    
+                if k.startswith("model.diffusion_model.middle_block."):
+                    w=weights[10][1]
+                elif k.startswith("model.diffusion_model.input_blocks."):
+                    j=int(k.split(".")[3])
+                    w=weights[1+j][1]
+                elif k.startswith("model.diffusion_model.output_blocks."):
+                    j=int(k.split(".")[3])
+                    w=weights[11+j][1]
+                elif k.startswith("model.diffusion_model.label_emb.") or k.startswith("model.diffusion_model.time_embed."):
+                    w=weights[1][1]
+                elif k.startswith("model.diffusion_model.out."):
+                    w=weights[19][1]
                 else:
-                    if t1.dim()==1:
-                        t1[w1:w2]=t2[w1:w2]
-                    elif t1.dim()==2:
-                        t1[:,w1:w2]=t2[:,w1:w2]
-                    elif t1.dim()==3:
-                        t1[:,w1:w2,:]=t2[:,w1:w2,:]
-                    elif t1.dim()==4:
-                        t1[:,w1:w2,:,:]=t2[:,w1:w2,:,:]
-                out_dict[k]=t1.to(torch.float16)
-                del w1,w2
-
-            save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
-            del w,out_dict,t1,t2
-            del_safe(k)
+                    if k.startswith("first_stage_model."):
+                        if v==0:
+                            out_dict[k]=t1.to(torch.float16)
+                            save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                            del out_dict
+                            del_safe(k)
+                            continue
+                        elif v==1:
+                            out_dict[k]=t2.to(torch.float16)
+                            save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                            del out_dict
+                            del_safe(k)
+                            continue
+                        else:
+                            w=weights[0][1]
+                    else:
+                        w=weights[0][1]
+    
+                if t1.dim() in (1, 2):
+                    dw = t2.shape[-1] - t1.shape[-1]
+                    if dw > 0:
+                        t1 = torch.nn.functional.pad(t1, (0, dw, 0, 0))
+                    elif dw < 0: 
+                        t2 = torch.nn.functional.pad(t2, (0, -dw, 0, 0))
+                    dh = t2.shape[0] - t1.shape[0]
+                    if dh > 0:
+                        t1 = torch.nn.functional.pad(t1, (0, 0, 0, dh))
+                    elif dh < 0:
+                        t2 = torch.nn.functional.pad(t2, (0, 0, 0, -dh))
+                    del dw,dh
+    
+                if mode=="dare":
+                    dt=t2-t1
+                    m = torch.from_numpy(numpy.random.binomial(1, dp, dt.shape)).to(torch.float32)
+                    out_dict[k] = (t1 + w * m * dt / (1 - dp)).to(torch.float16)
+                    del dt,m
+    
+                elif mode=="normal":
+                    out_dict[k]=((1-w)*t1+w*t2).to(torch.float16)
+    
+                elif mode=="mokuba":
+                    dt=t2-t1
+                    dt_mean=torch.mean(dt).item()
+                    dt_std=torch.std(dt).item()
+                    dt[dt>dt_mean+2*w*dt_std]=dt_mean+2*w*dt_std
+                    dt[dt<dt_mean-2*w*dt_std]=dt_mean-2*w*dt_std
+                    out_dict[k] = (t1 + w * dt).to(torch.float16)
+                    del dt,dt_mean,dt_std
+    
+                elif "tensor" in mode:
+                    w1=(1-w)/2
+                    w2=w
+                    w1=round(t1.size()[0]*w1)
+                    w2=round(t1.size()[0]*(w1+w2))
+                    if w1==0:
+                        out_dict[k]=t2.to(torch.float16)
+                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                        del w,out_dict,t1,t2,w1,w1
+                        del_safe(k)
+                        continue
+                    elif w2==0:
+                        out_dict[k]=t1.to(torch.float16)
+                        save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                        del w,out_dict,t1,t2,w1,w1
+                        del_safe(k)
+                        continue
+                    if mode=="tensor1":
+                        if t1.dim()==1:
+                            t1[w1:w2]=t2[w1:w2]
+                        elif t1.dim()==2:
+                            t1[w1:w2,:]=t2[w1:w2,:]
+                        elif t1.dim()==3:
+                            t1[w1:w2,:,:]=t2[w1:w2,:,:]
+                        elif t1.dim()==4:
+                            t1[w1:w2,:,:,:]=t2[w1:w2,:,:,:]
+                    else:
+                        if t1.dim()==1:
+                            t1[w1:w2]=t2[w1:w2]
+                        elif t1.dim()==2:
+                            t1[:,w1:w2]=t2[:,w1:w2]
+                        elif t1.dim()==3:
+                            t1[:,w1:w2,:]=t2[:,w1:w2,:]
+                        elif t1.dim()==4:
+                            t1[:,w1:w2,:,:]=t2[:,w1:w2,:,:]
+                    out_dict[k]=t1.to(torch.float16)
+                    del w1,w2
+    
+                save_file(out_dict,os.getcwd()+"/safe_temp/"+k+".safetensors")
+                del w,out_dict,t1,t2
+                del_safe(k)
 
         if win==None:
             print("")
