@@ -12,7 +12,7 @@ class imgup:
         if not(isinstance(path,int)):
             if not(os.path.exists(path)):
                 path=os.getcwd()+'/upscaler/RealESRGAN_x4plus.pth'
-                if not(os.path.dirname(path)):
+                if not(os.path.exists(os.path.dirname(path))):
                     os.mkdir(os.path.dirname(path))
                 url="https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth"
                 res = requests.get(url,stream=True)
