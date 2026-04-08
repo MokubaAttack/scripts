@@ -34,6 +34,7 @@ from compel import (
     CompelForSD,
     CompelForSDXL
 )
+import tomesd
 
 from .meta import plus_meta
 from .imgup import imgup
@@ -461,6 +462,7 @@ class mokupipe:
         self.pipe.vae.enable_tiling()
         if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
+        tomesd.apply_patch(self.pipe, ratio=0.5)
         
         if self.prompts==None:
             self.mkprompt(prompt=prompt,n_prompt=n_prompt)
@@ -477,7 +479,7 @@ class mokupipe:
             j=j+1
             clear_output(True)
             print(memo)
-            if j>1 and self.si:
+            if len(images)>0 and self.si:
                 imgshow(imgs=images)
 
             if self.is_sdxl:
@@ -578,6 +580,7 @@ class mokupipe:
         self.pipe.vae.enable_tiling()
         if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
+        tomesd.apply_patch(self.pipe, ratio=0.5)
         
         if self.prompts==None:
             self.mkprompt(prompt=prompt,n_prompt=n_prompt)
@@ -587,13 +590,29 @@ class mokupipe:
         if out:
             if not(os.path.exists(self.out_folder)):
                 os.makedirs(self.out_folder)
+
+        if self.upscaler==None:
+            print("You must make a upscaler.")
+            return []
+        else:
+            checklist=[]
+            for j in range(len(images)):
+                if images[j]==images[0]:
+                    checklist.append(1)
+            if len(checklist)==len(images):
+                if x!=images[0].width or y!=images[0].height:
+                    images[0]=self.upscaler.run(images[0],x,y)
+                    for j in range(len(images)):
+                        images[j]=images[0]
+            else:
+                for j in range(len(images)):
+                    if x!=images[j].width or y!=images[j].height:
+                        images[j]=self.upscaler.run(images[j],x,y)
+
         j=0
         for i in seed:
             j=j+1
-            if x!=images[j-1].width:
-                if self.upscaler==None:
-                    print("You must make a upscaler.")
-                    return []
+            if x!=images[j-1].width or y!=images[j-1].height:
                 memo1=memo+"Hires steps : "+str(step)+"\n"
                 self.meta_dict["hs"]=str(step)
                 memo1=memo1+"Denoising strength : "+str(ss)+"\n"
@@ -602,13 +621,12 @@ class mokupipe:
                 self.meta_dict["hu"]=str(x/images[j-1].width)
                 self.meta_dict["hum"],self.meta_dict["up"]=self.upscaler.get_method()
                 memo1=memo1+"Hires upscaler : "+self.meta_dict["hum"]+"\n"
-                images[j-1]=self.upscaler.run(images[j-1],x,y)
             else:
                 memo1=memo+"Denoising strength : "+str(ss)+"\n"
                 self.meta_dict["ds"]=str(ss)
             clear_output(True)
             print(memo1)
-            if j>1 and self.si:
+            if len(images)>0 and self.si:
                 imgshow(imgs=images)
 
             if self.is_sdxl:
@@ -739,6 +757,7 @@ class mokupipe:
         self.pipe.vae.enable_tiling()
         if self.xf:
             self.pipe.enable_xformers_memory_efficient_attention()
+        tomesd.apply_patch(self.pipe, ratio=0.5)
         
         if self.prompts==None:
             self.mkprompt(prompt=prompt,n_prompt=n_prompt)
@@ -756,12 +775,28 @@ class mokupipe:
             x=round(x/64)*64
             y=round(y/64)*64
 
+        if self.upscaler==None:
+            print("You must make a upscaler.")
+            return []
+        else:
+            checklist=[]
+            for j in range(len(images)):
+                if images[j]==images[0]:
+                    checklist.append(1)
+            if len(checklist)==len(images):
+                if x!=images[0].width or y!=images[0].height:
+                    images[0]=self.upscaler.run(images[0],x,y)
+                    for j in range(len(images)):
+                        images[j]=images[0]
+            else:
+                for j in range(len(images)):
+                    if x!=images[j].width or y!=images[j].height:
+                        images[j]=self.upscaler.run(images[j],x,y)
+
         j=0
         for i in seed:
             j=j+1
-            if self.upscaler==None:
-                print("You must make a upscaler.")
-                return []
+            
             memo1=memo+"Denoising strength : "+str(ss)+"\n"
             self.meta_dict["ds"]=str(ss)
             memo1=memo1+"Tile upscale : "+str(x/images[j-1].width)+"\n"
@@ -770,10 +805,9 @@ class mokupipe:
             memo1=memo1+"Tile upscaler : "+self.meta_dict["tum"]+"\n"
             if ccs!=None:
                 memo1=memo1+"controlnet_conditioning_scale : "+self.meta_dict["ccs"]+"\n"
-            images[j-1]=self.upscaler.run(images[j-1],x,y)
             clear_output(True)
             print(memo1)
-            if j>1 and self.si:
+            if len(images)>0 and self.si:
                 imgshow(imgs=images)
 
             if tile_size[0]>=8 and tile_size[1]>=8:

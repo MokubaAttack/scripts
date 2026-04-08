@@ -8,7 +8,7 @@ from IPython.display import clear_output
 
 from .mokupipe import mokupipe
 from .reset_func import reset_func
-from .discord import zip_to_discord
+from .discord import to_discord
 
 def mokucola(
     loras=[],
@@ -224,7 +224,7 @@ def mokucola(
         )
 
     if url!="":
-        zip_to_discord(out_folder,url)
+        to_discord(out_folder,url)
     del images,seed
     if del_pipe:
         reset_func(f=pipe,s=ser)
@@ -366,7 +366,7 @@ def mokuup(
         )
 
     if url!="":
-        zip_to_discord(out_folder,url)
+        to_discord(out_folder,url)
     del images,seed
     if del_pipe:
         reset_func(f=pipe,s=ser)
