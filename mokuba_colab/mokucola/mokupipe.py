@@ -600,19 +600,26 @@ class mokupipe:
                 if images[j]==images[0]:
                     checklist.append(1)
             if len(checklist)==len(images):
+                for j in range(len(images)):
+                    checklist[j]=False
                 if x!=images[0].width or y!=images[0].height:
                     images[0]=self.upscaler.run(images[0],x,y)
                     for j in range(len(images)):
                         images[j]=images[0]
+                        checklist[j]=True
             else:
+                checklist=[]
                 for j in range(len(images)):
                     if x!=images[j].width or y!=images[j].height:
                         images[j]=self.upscaler.run(images[j],x,y)
+                        checklist.append(True)
+                    else:
+                        checklist.append(False)
 
         j=0
         for i in seed:
             j=j+1
-            if x!=images[j-1].width or y!=images[j-1].height:
+            if checklist[j-1]:
                 memo1=memo+"Hires steps : "+str(step)+"\n"
                 self.meta_dict["hs"]=str(step)
                 memo1=memo1+"Denoising strength : "+str(ss)+"\n"

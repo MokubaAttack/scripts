@@ -3,7 +3,10 @@ try:
         mokucola,
         mokuup
     )
-    from .dl import dlc
+    from .dl import (
+        dlc,
+        dlk
+    )
 except:
     path=__file__.replace("\\","/")
     path=path.replace("mokucola/__init__.py","basicsr/data/degradations.py")
@@ -26,4 +29,7 @@ except:
         mokucola,
         mokuup
     )
-    from .dl import dlc
+    from .dl import (
+        dlc,
+        dlk
+    )

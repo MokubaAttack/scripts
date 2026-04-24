@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import shutil
 from safetensors.torch import (
     save_file,
     load_file
@@ -92,4 +93,20 @@ def dlc(ver_id,path,token,lora=False):
                 model2[k]=model[k]
         del model
         save_file(model2,path,metadata=meta_dict)
+
+def dlk(dataname,username,token,path):
+    url="https://www.kaggle.com/api/v1/datasets/download/"+username+"/"+dataname
+
+    res = requests.get(url,allow_redirects=True,stream=True,auth=requests.auth.HTTPBasicAuth(username,token))
+
+    with open('hogehoge.zip', 'wb') as f:
+        for chunk in res.iter_content(chunk_size=1024*1024):
+            f.write(chunk)
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path)
+    shutil.unpack_archive('hogehoge.zip', path)
+    os.remove('hogehoge.zip')
+
         
