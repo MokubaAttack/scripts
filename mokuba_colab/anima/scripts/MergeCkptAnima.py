@@ -262,7 +262,6 @@ if __name__=="__main__":
         [sg.Text("ckpt1"), sg.Input(key="ckpt1",right_click_menu=grp_rclick_menu["ckpt1"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))],
         [sg.Text("ckpt2"), sg.Input(key="ckpt2",right_click_menu=grp_rclick_menu["ckpt2"]),sg.FileBrowse( file_types=(('ckpt file', '.safetensors'),))],
         [sg.Text("weight of ckpt2"),sg.Input(key="w",right_click_menu=grp_rclick_menu["w"])],
-        [sg.Input(key="w",right_click_menu=grp_rclick_menu["w"])],
         [
             sg.Radio('NORMAL', key='normal',default=True,group_id='destination'),
             sg.Radio('TENSOR1', key='tensor1',default=False,group_id='destination'),
