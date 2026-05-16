@@ -5,11 +5,13 @@ from safetensors.torch import (
     load_file
 )
 import os
+import math
 
 if not(os.path.exists(os.getcwd()+"/pipecache")):
     os.mkdir(os.getcwd()+"/pipecache")
 
 def zip_ckpt(ckpt1,ckpt2):
+    keys=[]
     for k in ckpt1:
         if k in ckpt2:
             sum1=torch.sum(torch.abs(ckpt1[k])).item()
@@ -18,9 +20,10 @@ def zip_ckpt(ckpt1,ckpt2):
             if n and sum1!=sum2:
                 ckpt1[k]=ckpt1[k]*sum2/sum1
             ckpt1[k]=ckpt1[k].to(torch.bfloat16)
+        del ckpt2[k]
     return ckpt1
 
-key_dict={
+trans_key1={
     "ff.net.0.proj.weight":"mlp.layer1.weight",
     "ff.net.2.weight":"mlp.layer2.weight",
     "norm1.linear_1.weight":"adaln_modulation_self_attn.1.weight",
@@ -42,7 +45,7 @@ key_dict={
     "norm3.linear_1.weight":"adaln_modulation_mlp.1.weight",
     "norm3.linear_2.weight":"adaln_modulation_mlp.2.weight"
 }
-key2_dict={
+trans_key2={
     "patch_embed.proj.weight":"x_embedder.proj.1.weight",
     "time_embed.t_embedder.linear_1.weight":"t_embedder.1.linear_1.weight",
     "time_embed.t_embedder.linear_2.weight":"t_embedder.1.linear_2.weight",
@@ -50,6 +53,53 @@ key2_dict={
     "norm_out.linear_1.weight":"final_layer.adaln_modulation.1.weight",
     "norm_out.linear_2.weight":"final_layer.adaln_modulation.2.weight",
     "proj_out.weight":"final_layer.linear.weight"
+}
+
+vae_key1={
+    "conv1":"quant_conv",
+    "conv2":"post_quant_conv",
+}
+vae_key2={
+    "conv1":"conv_in",
+    "head.0":"norm_out",
+    "head.2":"conv_out",
+    "downsamples":"down_blocks",
+    "residual.2":"conv1",
+    "residual.6":"conv2",
+    "residual.0":"norm1",
+    "residual.3":"norm2",
+    "shortcut":"conv_shortcut",
+    "middle.1":"mid_block.attentions.0",
+    "middle.0":"mid_block.resnets.0",
+    "middle.2":"mid_block.resnets.1",
+}
+vae_key3={
+    "conv1":"conv_in",
+    "head.0":"norm_out",
+    "head.2":"conv_out",
+    "residual.2":"conv1",
+    "residual.6":"conv2",
+    "residual.0":"norm1",
+    "residual.3":"norm2",
+    "middle.1":"mid_block.attentions.0",
+    "middle.0":"mid_block.resnets.0",
+    "middle.2":"mid_block.resnets.1",
+    "upsamples.3":"up_blocks.0.upsamplers.0",
+    "upsamples.7":"up_blocks.1.upsamplers.0",
+    "upsamples.11":"up_blocks.2.upsamplers.0",
+    "upsamples.0":"up_blocks.0.resnets.0",
+    "upsamples.10":"up_blocks.2.resnets.2",
+    "upsamples.12":"up_blocks.3.resnets.0",
+    "upsamples.13":"up_blocks.3.resnets.1",
+    "upsamples.14":"up_blocks.3.resnets.2",
+    "upsamples.1":"up_blocks.0.resnets.1",
+    "upsamples.2":"up_blocks.0.resnets.2",
+    "upsamples.4":"up_blocks.1.resnets.0",
+    "shortcut":"conv_shortcut",
+    "upsamples.5":"up_blocks.1.resnets.1",
+    "upsamples.6":"up_blocks.1.resnets.2",
+    "upsamples.8":"up_blocks.2.resnets.0",
+    "upsamples.9":"up_blocks.2.resnets.1",
 }
 
 check="final_layer.linear.weight"
@@ -84,10 +134,15 @@ def checksafe(path):
                 mk="model.diffusion_model."+k.removeprefix(head)
                 if not(mk in pass_keys):
                     sd[mk]=sd[k]
-            del sd[k]
+                else:
+                    del sd[k]
+            elif k.startswith("first_stage_model.") or k.startswith("cond_stage_model.qwen3_06b.transformer.model."):
+                pass
+            else:
+                del sd[k]
 
-    save_file(sd,path.replace(".safetnsors","_dummy.safetnsors"))
-    return path.replace(".safetnsors","_dummy.safetnsors")
+    save_file(sd,path.replace(".safetensors","_dummy.safetensors"))
+    return path.replace(".safetensors","_dummy.safetensors")
 
 def mksafe(base_path,loras,ws,out_path,win):
     win["RUN"].Update(disabled=True)
@@ -105,12 +160,31 @@ def mksafe(base_path,loras,ws,out_path,win):
             k=k.replace("core.","")
             if k.startswith("transformer_"):
                 k=k.replace("transformer_","")
-                for key in key_dict:
+                for key in trans_key1:
                     if k.endswith(key):
-                        k=k.replace(key,key_dict[key])
+                        k=k.replace(key,trans_key1[key])
             else:
-                k=key2_dict[k]
+                k=trans_key2[k]
         k="model.diffusion_model."+k
+        osd[k]=p.data.to(torch.float32)
+        
+    for k,p in getattr(pipe, "vae").named_parameters():
+        if k.startswith("encoder."):
+            for key in vae_key2:
+                if vae_key2[key] in k:
+                    k.replace(vae_key2[key],key)
+        elif k.startswith("decoder."):
+            for key in vae_key3:
+                if vae_key3[key] in k:
+                    k.replace(vae_key3[key],key)
+        else:
+            for key in vae_key1:
+                if vae_key1[key] in k:
+                    k.replace(vae_key1[key],key)
+        k="first_stage_model."+k
+        osd[k]=p.data.to(torch.float32)
+    for k,p in getattr(pipe, "text_encoder").named_parameters():
+        k="cond_stage_model.qwen3_06b.transformer.model."+k
         osd[k]=p.data.to(torch.float32)
 
     for i in range(len(loras)):
@@ -125,12 +199,30 @@ def mksafe(base_path,loras,ws,out_path,win):
             k=k.replace("core.","")
             if k.startswith("transformer_"):
                 k=k.replace("transformer_","")
-                for key in key_dict:
+                for key in trans_key1:
                     if k.endswith(key):
-                        k=k.replace(key,key_dict[key])
+                        k=k.replace(key,trans_key1[key])
             else:
-                k=key2_dict[k]
+                k=trans_key2[k]
         k="model.diffusion_model."+k
+        sd[k]=p.data.to(torch.float32)
+    for k,p in getattr(pipe, "vae").named_parameters():
+        if k.startswith("encoder."):
+            for key in vae_key2:
+                if vae_key2[key] in k:
+                    k.replace(vae_key2[key],key)
+        elif k.startswith("decoder."):
+            for key in vae_key3:
+                if vae_key3[key] in k:
+                    k.replace(vae_key3[key],key)
+        else:
+            for key in vae_key1:
+                if vae_key1[key] in k:
+                    k.replace(vae_key1[key],key)
+        k="first_stage_model."+k
+        sd[k]=p.data.to(torch.float32)
+    for k,p in getattr(pipe, "text_encoder").named_parameters():
+        k="cond_stage_model.qwen3_06b.transformer.model."+k
         sd[k]=p.data.to(torch.float32)
         
     output=zip_ckpt(sd,osd)
@@ -184,13 +276,36 @@ if __name__=="__main__":
 
         elif event=="RUN":
             base_safe=values["ckpt"]
+            loras=[]
+            weights=[]
             out_safe=values["out"]
-            loras=[
-                values["lora1"],values["lora2"],values["lora3"]
-            ]
-            weights=[
-                values["w1"],values["w2"],values["w3"]
-            ]
+            if values["lora1"]!="":
+                loras.append(values["lora1"])
+                try:
+                    weights.append(float(values["w1"]))
+                    window["w1"].update(str(float(values["w1"])))
+                except:
+                    weights.append(1.0)
+                    window["w1"].update("1.0")
+                    
+            if values["lora2"]!="":
+                loras.append(values["lora2"])
+                try:
+                    weights.append(float(values["w2"]))
+                    window["w2"].update(str(float(values["w2"])))
+                except:
+                    weights.append(1.0)
+                    window["w2"].update("1.0")
+                    
+            if values["lora3"]!="":
+                loras.append(values["lora3"])
+                try:
+                    weights.append(float(values["w3"]))
+                    window["w3"].update(str(float(values["w3"])))
+                except:
+                    weights.append(1.0)
+                    window["w3"].update("1.0")
+
             if base_safe!="" and out_safe!="":
                 thread1 = threading.Thread(target=mksafe,args=(base_safe,loras,weights,out_safe,window))
                 thread1.start()
