@@ -6,22 +6,59 @@ from safetensors.torch import (
 )
 import os
 import math
+import shutil
+import json
 
 if not(os.path.exists(os.getcwd()+"/pipecache")):
     os.mkdir(os.getcwd()+"/pipecache")
 
-def zip_ckpt(ckpt1,ckpt2):
-    keys=[]
-    for k in ckpt1:
-        if k in ckpt2:
-            sum1=torch.sum(torch.abs(ckpt1[k])).item()
-            sum2=torch.sum(torch.abs(ckpt2[k])).item()
-            n=not(math.isnan(sum1) or math.isnan(sum2))
-            if n and sum1!=sum2:
-                ckpt1[k]=ckpt1[k]*sum2/sum1
-            ckpt1[k]=ckpt1[k].to(torch.bfloat16)
-        del ckpt2[k]
-    return ckpt1
+def zip_ckpt(i1,i2,keys):
+    for k in keys:
+        ckpt1=load_file(os.getcwd()+"/safe_temp/"+str(i1)+"_"+k+".safetensors")
+        ckpt2=load_file(os.getcwd()+"/safe_temp/"+str(i2)+"_"+k+".safetensors")
+        sum1=torch.sum(torch.abs(ckpt1[k])).item()
+        sum2=torch.sum(torch.abs(ckpt2[k])).item()
+        n=not(math.isnan(sum1) or math.isnan(sum2))
+        if n and sum1!=sum2:
+            ckpt1[k]=ckpt1[k]*sum2/sum1
+        ckpt1[k]=ckpt1[k].to(torch.bfloat16)
+        save_file(ckpt1,os.getcwd()+"/safe_temp/"+k+".safetensors")
+        del ckpt1,ckpt2
+        os.remove(os.getcwd()+"/safe_temp/"+str(i1)+"_"+k+".safetensors")
+        os.remove(os.getcwd()+"/safe_temp/"+str(i2)+"_"+k+".safetensors")
+    return keys
+    
+def save_ckpt(keys,path):
+    out_dict={}
+    out_dict["__metadata__"]={"format":"pt"}
+    n=0
+    for k in keys:
+        f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
+        l=int.from_bytes(f.read(8),byteorder="little")
+        head=f.read(l).decode()
+        head=json.loads(head)
+        out_dict[k]=head[k]
+        offsets=out_dict[k]["data_offsets"][1]
+        out_dict[k]["data_offsets"][0]=n
+        n=n+offsets
+        out_dict[k]["data_offsets"][1]=n
+        f.close()
+
+    output=open(path,"wb")
+    out_dict=str(out_dict).replace("'",'"')
+    out_dict=out_dict.encode()
+    l=len(out_dict).to_bytes(8,byteorder="little")
+    output.write(l)
+    output.write(out_dict)
+
+    for k in keys:
+        f=open(os.getcwd()+"/safe_temp/"+k+".safetensors","rb")
+        l=int.from_bytes(f.read(8),byteorder="little")
+        head=f.read(l)
+        output.write(f.read())
+        f.close()
+        os.remove(os.getcwd()+"/safe_temp/"+k+".safetensors")
+    output.close()
 
 trans_key1={
     "ff.net.0.proj.weight":"mlp.layer1.weight",
@@ -143,19 +180,11 @@ def checksafe(path):
 
     save_file(sd,path.replace(".safetensors","_dummy.safetensors"))
     return path.replace(".safetensors","_dummy.safetensors")
-
-def mksafe(base_path,loras,ws,out_path,win):
-    win["RUN"].Update(disabled=True)
-    win["info"].update("making")
-    base_path=checksafe(base_path)
-    if base_path==None:
-        win["RUN"].Update(disabled=False)
-        win["info"].update("error")
-        return
-    pipe = AnimaPipeline.from_single_file(base_path,cache_dir=os.getcwd()+"/pipecache")
-
-    osd={}
+    
+def splitpipe(pipe,i,full_file):
+    keys=[]
     for k,p in getattr(pipe, "transformer").named_parameters():
+        osd={}
         if k.startswith("core."):
             k=k.replace("core.","")
             if k.startswith("transformer_"):
@@ -167,67 +196,69 @@ def mksafe(base_path,loras,ws,out_path,win):
                 k=trans_key2[k]
         k="model.diffusion_model."+k
         osd[k]=p.data.to(torch.float32)
-        
-    for k,p in getattr(pipe, "vae").named_parameters():
-        if k.startswith("encoder."):
-            for key in vae_key2:
-                if vae_key2[key] in k:
-                    k.replace(vae_key2[key],key)
-        elif k.startswith("decoder."):
-            for key in vae_key3:
-                if vae_key3[key] in k:
-                    k.replace(vae_key3[key],key)
-        else:
-            for key in vae_key1:
-                if vae_key1[key] in k:
-                    k.replace(vae_key1[key],key)
-        k="first_stage_model."+k
-        osd[k]=p.data.to(torch.float32)
-    for k,p in getattr(pipe, "text_encoder").named_parameters():
-        k="cond_stage_model.qwen3_06b.transformer.model."+k
-        osd[k]=p.data.to(torch.float32)
+        save_file(osd,os.getcwd()+"/safe_temp/"+str(i)+"_"+k+".safetensors")
+        keys.append(k)
+    if full_file:
+        for k,p in getattr(pipe, "vae").named_parameters():
+            osd={}
+            if k.startswith("encoder."):
+                for key in vae_key2:
+                    if vae_key2[key] in k:
+                        k.replace(vae_key2[key],key)
+            elif k.startswith("decoder."):
+                for key in vae_key3:
+                    if vae_key3[key] in k:
+                        k.replace(vae_key3[key],key)
+            else:
+                for key in vae_key1:
+                    if vae_key1[key] in k:
+                        k.replace(vae_key1[key],key)
+            k="first_stage_model."+k
+            osd[k]=p.data.to(torch.float32)
+            save_file(osd,os.getcwd()+"/safe_temp/"+str(i)+"_"+k+".safetensors")
+            keys.append(k)
+            
+        for k,p in getattr(pipe, "text_encoder").named_parameters():
+            osd={}
+            k="cond_stage_model.qwen3_06b.transformer.model."+k
+            osd[k]=p.data.to(torch.float32)
+            save_file(osd,os.getcwd()+"/safe_temp/"+str(i)+"_"+k+".safetensors")
+            keys.append(k)
+            
+    return keys
 
+def mksafe(base_path,loras,ws,out_path,full_file,win):
+    win["RUN"].Update(disabled=True)
+    if os.path.exists(os.getcwd()+"/safe_temp"):
+        shutil.rmtree(os.getcwd()+"/safe_temp")
+    win["info"].update("check ckpt file")
+    base_path=checksafe(base_path)
+    if base_path==None:
+        os.remove(base_path)
+        win["RUN"].Update(disabled=False)
+        win["info"].update("error")
+        return
+        
+    win["info"].update("make pipe")
+    os.mkdir(os.getcwd()+"/safe_temp")
+    pipe = AnimaPipeline.from_single_file(base_path,cache_dir=os.getcwd()+"/pipecache")
+
+    keys=splitpipe(pipe,0,full_file)
+
+    win["info"].update("merge lora")
     for i in range(len(loras)):
         pipe.load_lora_weights(loras[i], adapter_name="style"+str(i))
         pipe.set_adapters("style"+str(i), adapter_weights=[ws[i]])
         pipe.fuse_lora()
         pipe.unload_lora_weights()
 
-    sd={}
-    for k,p in getattr(pipe, "transformer").named_parameters():
-        if k.startswith("core."):
-            k=k.replace("core.","")
-            if k.startswith("transformer_"):
-                k=k.replace("transformer_","")
-                for key in trans_key1:
-                    if k.endswith(key):
-                        k=k.replace(key,trans_key1[key])
-            else:
-                k=trans_key2[k]
-        k="model.diffusion_model."+k
-        sd[k]=p.data.to(torch.float32)
-    for k,p in getattr(pipe, "vae").named_parameters():
-        if k.startswith("encoder."):
-            for key in vae_key2:
-                if vae_key2[key] in k:
-                    k.replace(vae_key2[key],key)
-        elif k.startswith("decoder."):
-            for key in vae_key3:
-                if vae_key3[key] in k:
-                    k.replace(vae_key3[key],key)
-        else:
-            for key in vae_key1:
-                if vae_key1[key] in k:
-                    k.replace(vae_key1[key],key)
-        k="first_stage_model."+k
-        sd[k]=p.data.to(torch.float32)
-    for k,p in getattr(pipe, "text_encoder").named_parameters():
-        k="cond_stage_model.qwen3_06b.transformer.model."+k
-        sd[k]=p.data.to(torch.float32)
+    keys=splitpipe(pipe,1,full_file)
         
-    output=zip_ckpt(sd,osd)
-    save_file(output,out_path)
+    win["info"].update("output ckpt file")
+    keys=zip_ckpt(1,0,keys)
+    save_ckpt(keys,out_path)
     os.remove(base_path)
+    shutil.rmtree(os.getcwd()+"/safe_temp")
 
     win["RUN"].Update(disabled=False)
     win["info"].update("fin")
@@ -261,6 +292,7 @@ if __name__=="__main__":
         [sg.Text("lora3 file")],
         [sg.InputText(key='lora3',right_click_menu=grp_rclick_menu["lora3"]),sg.FileBrowse('select lora', file_types=(('lora file', '.safetensors'),))],
         [sg.Text("weight"),sg.InputText("1.0",key='w3',right_click_menu=grp_rclick_menu["w3"])],
+        [sg.Checkbox('full file', key='ff')],
         [sg.Text("out file")],
         [sg.Input(key="out",right_click_menu=grp_rclick_menu["out"]),sg.FileSaveAs(file_types=(('ckpt file', '.safetensors'),))],
         [sg.Text("infomation",key="info")],
@@ -305,9 +337,10 @@ if __name__=="__main__":
                 except:
                     weights.append(1.0)
                     window["w3"].update("1.0")
+            full_file=values["ff"]
 
             if base_safe!="" and out_safe!="":
-                thread1 = threading.Thread(target=mksafe,args=(base_safe,loras,weights,out_safe,window))
+                thread1 = threading.Thread(target=mksafe,args=(base_safe,loras,weights,out_safe,full_file,window))
                 thread1.start()
                     
         elif "-copy-" in event:
