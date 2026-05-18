@@ -595,26 +595,33 @@ class mokupipe:
             print("You must make a upscaler.")
             return []
         else:
-            checklist=[]
-            for j in range(len(images)):
-                if images[j]==images[0]:
-                    checklist.append(1)
-            if len(checklist)==len(images):
-                for j in range(len(images)):
-                    checklist[j]=False
-                if x!=images[0].width or y!=images[0].height:
-                    images[0]=self.upscaler.run(images[0],x,y)
-                    for j in range(len(images)):
-                        images[j]=images[0]
-                        checklist[j]=True
-            else:
-                checklist=[]
-                for j in range(len(images)):
-                    if x!=images[j].width or y!=images[j].height:
-                        images[j]=self.upscaler.run(images[j],x,y)
-                        checklist.append(True)
-                    else:
-                        checklist.append(False)
+			checklist=[]
+			for j in range(len(images)):
+				if images[j]==images[0]:
+					checklist.append(1)
+			if len(checklist)==len(images):
+				u_list=[]
+				for j in range(len(images)):
+					u_list.append(1)
+					checklist[j]=False
+				if x!=images[0].width or y!=images[0].height:
+					u=x/images[0].width
+					images[0]=self.upscaler.run(images[0],x,y)
+					for j in range(len(images)):
+						u_list[j]=u
+						images[j]=images[0]
+						checklist[j]=True
+			else:
+				checklist=[]
+				u_list=[]
+				for j in range(len(images)):
+					if x!=images[j].width or y!=images[j].height:
+						u_list.append(x/images[j].width)
+						images[j]=self.upscaler.run(images[j],x,y)
+						checklist.append(True)
+					else:
+						u_list.append(1)
+						checklist.append(False)
 
         j=0
         for i in seed:
@@ -624,8 +631,8 @@ class mokupipe:
                 self.meta_dict["hs"]=str(step)
                 memo1=memo1+"Denoising strength : "+str(ss)+"\n"
                 self.meta_dict["ds"]=str(ss)
-                memo1=memo1+"Hires upscale : "+str(x/images[j-1].width)+"\n"
-                self.meta_dict["hu"]=str(x/images[j-1].width)
+                memo1=memo1+"Hires upscale : "+str(u_list[j-1])+"\n"
+                self.meta_dict["hu"]=str(u_list[j-1])
                 self.meta_dict["hum"],self.meta_dict["up"]=self.upscaler.get_method()
                 memo1=memo1+"Hires upscaler : "+self.meta_dict["hum"]+"\n"
             else:
@@ -786,19 +793,28 @@ class mokupipe:
             print("You must make a upscaler.")
             return []
         else:
-            checklist=[]
-            for j in range(len(images)):
-                if images[j]==images[0]:
-                    checklist.append(1)
-            if len(checklist)==len(images):
-                if x!=images[0].width or y!=images[0].height:
-                    images[0]=self.upscaler.run(images[0],x,y)
-                    for j in range(len(images)):
-                        images[j]=images[0]
-            else:
-                for j in range(len(images)):
-                    if x!=images[j].width or y!=images[j].height:
-                        images[j]=self.upscaler.run(images[j],x,y)
+			checklist=[]
+			for j in range(len(images)):
+				if images[j]==images[0]:
+					checklist.append(1)
+			if len(checklist)==len(images):
+				u_list=[]
+				for i in range(len(images)):
+					u_list.append(1)
+				if x!=images[0].width or y!=images[0].height:
+					u=x/images[0].width
+					images[0]=self.upscaler.run(images[0],x,y)
+					for j in range(len(images)):
+						u_list[j]=u
+						images[j]=images[0]
+			else:
+				u_list=[]
+				for j in range(len(images)):
+					if x!=images[j].width or y!=images[j].height:
+						u_list.append(x/images[j].width)
+						images[j]=self.upscaler.run(images[j],x,y)
+					else:
+						u_list.append(1)
 
         j=0
         for i in seed:
@@ -806,8 +822,8 @@ class mokupipe:
             
             memo1=memo+"Denoising strength : "+str(ss)+"\n"
             self.meta_dict["ds"]=str(ss)
-            memo1=memo1+"Tile upscale : "+str(x/images[j-1].width)+"\n"
-            self.meta_dict["tu"]=str(x/images[j-1].width)
+            memo1=memo1+"Tile upscale : "+str(u_list[j-1])+"\n"
+            self.meta_dict["tu"]=str(u_list[j-1])
             self.meta_dict["tum"],self.meta_dict["up"]=self.upscaler.get_method()
             memo1=memo1+"Tile upscaler : "+self.meta_dict["tum"]+"\n"
             if ccs!=None:
