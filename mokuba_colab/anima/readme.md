@@ -15,7 +15,7 @@ import mokucola
 ```
 ## explanations
 mokucola.mokuani(  
-loras, lora_weights, prompt, n_prompt, pic_number, gs, step, sample, sgm, seed, out_folder, base_safe, j_or_p, url, p, dtype, dev, ser, del_pipe, si    
+loras, lora_weights, prompt, n_prompt, pic_number, gs, step, sample, sgm, seed, out_folder, base_safe, j_or_p, url, p, dtype, dev, ser, del_pipe, si, mode, up, Interpolation, step2, ss  
 )  
 - base_safe : str  
   It is the checkpoint file.
@@ -69,6 +69,24 @@ loras, lora_weights, prompt, n_prompt, pic_number, gs, step, sample, sgm, seed, 
   If you input the return of this module, you can use same pipeline without making the pipeline.
 - dtype : str  
   It is the calculation accuracy. Choices are f32 and bf16.
+- ss : float  
+  It is denoising_strength ( a parameter of hires.fix ).
+- mode : int  
+  It is the working mode.
+  - 0 : normal
+  - 1 : hires.fix
+- up : float  
+  It is the upscale ( a parameter of hires.fix ).
+- Interpolation : int or str  
+  It is the interpolation method of the upscaling. If you input pth file of ESRGAN, images are upscaled by ESRGAN.
+  - 1 : NEAREST
+  - 2 : BOX
+  - 3 : BILINEAR
+  - 4 : HAMMING
+  - 5 : BICUBIC
+  - 6 : LANCZOS
+- step2 : int  
+  It is Hires steps ( a parameter of hires.fix ).
 - return : mokuanipipe object
 ## Credits
 [hdae/diffusers-anima](https://github.com/hdae/diffusers-anima)
