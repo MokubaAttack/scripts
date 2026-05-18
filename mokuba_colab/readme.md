@@ -103,4 +103,3 @@ Please use it.
 [gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
 [lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
 [OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)  
-[hdae/diffusers-anima](https://github.com/hdae/diffusers-anima)
