@@ -24,5 +24,8 @@ setup(
         "realesrgan",
         "tomesd",
         "torchao==0.16.0",
+        "accelerate",
+        "PEFT",
+        "IPython",
     ],
 )
