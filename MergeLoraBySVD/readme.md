@@ -5,65 +5,34 @@ python modules
 ```
 pip install torch safetensors packaging numpy
 ```
-~~github repository  
-[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)~~
-## ~~setup~~
-1. ~~App path of sd-scripts directory to system path.~~
-2. ~~Save MergeLoraBySVD to sd-scripts directory or current directory.~~
 ## explanations
-**MergeLoraBySVD.merge(**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#list of lora file  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**loras=[],**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#list of lora weight  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**weights=[],**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#lbw for each lora   
-&nbsp;&nbsp;&nbsp;&nbsp;
-**lbws = [],**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#precision of calculation ( "float", "fp16", "bf16" )  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**precision="float",**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#precision of output file ( "float", "fp16", "bf16" )  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**save_precision="fp16",**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#dim of LoRA  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**new_rank=16,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#dim of Conv2d 3x3 LoRA ( When it is None, it is same to new_rank )  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**new_conv_rank=None,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#When you input "cuda", it calculates by GPU.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**device=None,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-~~#When you input True, it do not save sai modelspec metadata. ( minimum ss_metadata for LoRA is saved. )~~  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**~~no_metadata=True,~~**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#filename of output  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**save_to=None,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#window of FreeSimpleGUI  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**win=None,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#the degree of using memory  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**mem_limit=None,**  
-&nbsp;&nbsp;&nbsp;&nbsp;
-#the dict of metadata  
-&nbsp;&nbsp;&nbsp;&nbsp;
-**meta_dict=None**  
-**)**
+MergeLoraBySVD.merge(
+
+- loras=[],  
+  list of lora file
+- weights=[],  
+  list of lora weight
+- lbws = [],  
+  lbw for each lora
+- precision="float",  
+  precision of calculation ( "float", "fp16", "bf16" )
+- save_precision="fp16",  
+  precision of output file ( "float", "fp16", "bf16" )
+- new_rank=16,  
+  dim of LoRA
+- new_conv_rank=None,  
+  dim of Conv2d 3x3 LoRA ( When it is None, it is same to new_rank )
+- device=None,  
+  When you input "cuda", it calculates by GPU. 
+- save_to=None,  
+  filename of output
+- win=None,  
+  window of FreeSimpleGUI
+- mem_limit=None,  
+  the degree of using memory 
+- meta_dict=None  
+  the dict of metadata
+  
+)
 ## Credits
 [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
