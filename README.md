@@ -22,3 +22,12 @@ It is a script that write metadata to PNG file. That metadata is recognized in C
 It is a script that changes the accuracy of the safetensors file.
 ## [differense_between_ckpts](https://github.com/MokubaAttack/scripts/tree/main/difference_between_ckpts)
 I make [extract_lora_from_models.py](https://github.com/kohya-ss/sd-scripts/blob/main/networks/extract_lora_from_models.py) of kohya-ss/sd-scripts into a module. But this script supports SDXL models only. I make it to run by one file.
+## Credits
+[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
+[huggingface/diffusers](https://github.com/huggingface/diffusers/tree/main)
+[hako-mikan/sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger)
+[martyn/safetensors-merge-supermario](https://github.com/martyn/safetensors-merge-supermario)
+[xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/tree/master)  
+[gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
+[lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
+[OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)
