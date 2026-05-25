@@ -3,7 +3,7 @@ It is a script that merge SDXL checkpoints. This script supports block merge and
 ## requirements
 python modules
 ```
-pip install safetensors torch FreeSimpleGUI packaging numpy plyer pyperclip
+pip install safetensors torch FreeSimpleGUI packaging numpy pyperclip
 ```
 data files  
 You need to save data.txt in the directory that you save merge_ckpt.py in.
