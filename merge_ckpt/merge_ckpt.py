@@ -40,8 +40,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             print("the output path is needed to be a safetensors file.")
         else:
             win["RUN"].Update(disabled=False)
-            win["info"].update("error")
-            notification.notify(title="error",message="the output path is needed to be a safetensors file.")
+            win["info"].update("the output path is needed to be a safetensors file.")
         return
 
     for path in ckpts:
@@ -50,8 +49,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 print(path+" does not exist.")
             else:
                 win["RUN"].Update(disabled=False)
-                win["info"].update("error")
-                notification.notify(title="error",message=path+" does not exist.")
+                win["info"].update(os.path.basename(path)+" does not exist.")
             return
 
     if mode=="dare":
@@ -60,8 +58,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 print("0 < Dropout probability <= 0.5")
             else:
                 win["RUN"].Update(disabled=False)
-                win["info"].update("error")
-                notification.notify(title="error",message="0 < Dropout probability <= 0.5")
+                win["info"].update("0 < Dropout probability <= 0.5")
             return
     else:
         if not(mode in ["normal","mokuba","tensor1","tensor2"]):
@@ -69,8 +66,7 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
                 print("You must choose one of normal or dare or mokuba or tensor1 or tensor2.")
             else:
                 win["RUN"].Update(disabled=False)
-                win["info"].update("error")
-                notification.notify(title="error",message="You must choose one of normal or dare or mokuba or tensor1 or tensor2.")
+                win["info"].update("You must choose one of normal or dare or mokuba or tensor1 or tensor2.")
             return
 
     try:
@@ -321,7 +317,6 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
         else:
             win["RUN"].Update(disabled=False)
             win["info"].update("fin")
-            notification.notify(title="fin",message=out_path)
     except:
         if os.path.exists(os.getcwd()+"/safe_temp"):
             shutil.rmtree(os.getcwd()+"/safe_temp")
@@ -329,14 +324,12 @@ def mergeckpt(ckpts,weights,v,out_path,mode="normal",dp=0,seed=0,win=None):
             print("I failed in the output.")
         else:
             win["RUN"].Update(disabled=False)
-            win["info"].update("error")
-            notification.notify(title="error",message="I failed in the output.")
+            win["info"].update("I failed in the output.")
 
 if __name__=="__main__":
     import FreeSimpleGUI as sg
     import tkinter as tk
     import pyperclip
-    from plyer import notification
     import threading
 
     sg.theme('TealMono')
