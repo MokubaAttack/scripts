@@ -45,89 +45,88 @@ def plus(vs,win=None):
         ws[i]=str(ws[i])
     for i in range(len(embeds)):
         embeds[i]=str(embeds[i])
-    #try:
-    metadata=pr+"\n\n"
-    metadata=metadata+"Negative prompt: "+ne+"\n\n"
-    if st!="":
-        metadata=metadata+"Steps: "+st+", " 
-    if sa!="":
-        if sc=="":
-            metadata=metadata+"Sampler: "+sa+", "
+    try:
+        metadata=pr+"\n\n"
+        metadata=metadata+"Negative prompt: "+ne+"\n\n"
+        if st!="":
+            metadata=metadata+"Steps: "+st+", " 
+        if sa!="":
+            if sc=="":
+                metadata=metadata+"Sampler: "+sa+", "
+            else:
+                metadata=metadata+"Sampler: "+sa+" "+sc+", "
         else:
-            metadata=metadata+"Sampler: "+sa+" "+sc+", "
-    else:
-        metadata=metadata+"Sampler: Undefined, "
-    if cf!="":
-        metadata=metadata+"CFG scale: "+cf+", "
-    if se!="":
-        metadata=metadata+"Seed: "+se+", "
-    if cl!="":
-        metadata=metadata+"Clip skip: "+cl+", "
-    if ds!="":
-        metadata=metadata+"Denoising strength: "+ds+", "
-    if hu!="":
-        metadata=metadata+"Hires upscale: "+hu+", "
-    if hs!="":
-        metadata=metadata+"Hires steps: "+hs+", "
-    if hum!="":
-        metadata=metadata+"Hires upscaler: "+hum+", "
-    if pag!="":
-        metadata=metadata+"PAG scale: "+pag+", "
-    if tu!="":
-        metadata=metadata+"Tile scale: "+tu+", "
-    if tum!="":
-        metadata=metadata+"Tile scaler: "+tum+", "
-    if ccs!="":
-        metadata=metadata+"controlnet_conditioning_scale: "+ccs+", "
-
-    metadata=metadata+'Civitai resources: ['
-    if ckpt!="":
-        metadata=metadata+'{"type":"checkpoint","modelVersionId":'+ckpt+"}"
-    for i in range(len(loras)):
-        metadata=metadata+',{"type":"lora","weight":'+ws[i]+',"modelVersionId":'+loras[i]+"}"
-    for i in range(len(embeds)):
-        metadata=metadata+',{"type":"embed","modelVersionId":'+embeds[i]+"}"
-    if vae!="":
-        metadata=metadata+',{"type":"ae","modelVersionId":'+vae+"}"
-    if cont!="":
-        metadata=metadata+',{"type":"controlnet","modelVersionId":'+cont+"}"
-    if up!="":
-        metadata=metadata+',{"type":"upscaler","modelVersionId":'+up+"}"
-    metadata=metadata+'], Civitai metadata: {}'
-
-    if "[," in metadata:
-        metadata=metadata.replace("[,","[")
-        
-    if path.endswith(".png"):
-        output_path=path.replace(".png","_meta.png")
-        image = Image.open(path)
-        pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", metadata)
-        image.save(output_path, "PNG", pnginfo=pnginfo)
-    elif path.endswith(".jpg"):
-        output_path=path.replace(".jpg","_meta.jpg")
-        shutil.copy(path,output_path)
-        with pyexiv2.Image(output_path) as img:
-            img.modify_exif({'Exif.Photo.UserComment':metadata})
-    else:
+            metadata=metadata+"Sampler: Undefined, "
+        if cf!="":
+            metadata=metadata+"CFG scale: "+cf+", "
+        if se!="":
+            metadata=metadata+"Seed: "+se+", "
+        if cl!="":
+            metadata=metadata+"Clip skip: "+cl+", "
+        if ds!="":
+            metadata=metadata+"Denoising strength: "+ds+", "
+        if hu!="":
+            metadata=metadata+"Hires upscale: "+hu+", "
+        if hs!="":
+            metadata=metadata+"Hires steps: "+hs+", "
+        if hum!="":
+            metadata=metadata+"Hires upscaler: "+hum+", "
+        if pag!="":
+            metadata=metadata+"PAG scale: "+pag+", "
+        if tu!="":
+            metadata=metadata+"Tile scale: "+tu+", "
+        if tum!="":
+            metadata=metadata+"Tile scaler: "+tum+", "
+        if ccs!="":
+            metadata=metadata+"controlnet_conditioning_scale: "+ccs+", "
+    
+        metadata=metadata+'Civitai resources: ['
+        if ckpt!="":
+            metadata=metadata+'{"type":"checkpoint","modelVersionId":'+ckpt+"}"
+        for i in range(len(loras)):
+            metadata=metadata+',{"type":"lora","weight":'+ws[i]+',"modelVersionId":'+loras[i]+"}"
+        for i in range(len(embeds)):
+            metadata=metadata+',{"type":"embed","modelVersionId":'+embeds[i]+"}"
+        if vae!="":
+            metadata=metadata+',{"type":"ae","modelVersionId":'+vae+"}"
+        if cont!="":
+            metadata=metadata+',{"type":"controlnet","modelVersionId":'+cont+"}"
+        if up!="":
+            metadata=metadata+',{"type":"upscaler","modelVersionId":'+up+"}"
+        metadata=metadata+'], Civitai metadata: {}'
+    
+        if "[," in metadata:
+            metadata=metadata.replace("[,","[")
+            
+        if path.endswith(".png"):
+            output_path=path.replace(".png","_meta.png")
+            image = Image.open(path)
+            pnginfo = PngImagePlugin.PngInfo()
+            pnginfo.add_text("parameters", metadata)
+            image.save(output_path, "PNG", pnginfo=pnginfo)
+        elif path.endswith(".jpg"):
+            output_path=path.replace(".jpg","_meta.jpg")
+            shutil.copy(path,output_path)
+            with pyexiv2.Image(output_path) as img:
+                img.modify_exif({'Exif.Photo.UserComment':metadata})
+        else:
+            if win==None:
+                print("You need to select a png file or a jpg file.")
+            else:
+                win["info"].print("You need to select a png file or a jpg file.", end="\n")
+            return 0
         if win==None:
-            print("You need to select a png file or a jpg file.")
+            print("fin")
         else:
-            win["info"].print("You need to select a png file or a jpg file.", end="\n")
-        return 0
-    if win==None:
-        print("fin")
-    else:
-        win["info"].print("fin", end="\n")
-    return 1
-    """
+            win["info"].print("fin", end="\n")
+        return 1
+    
     except:
         if win==None:
             print("error")
         else:
             win["info"].print("error", end="\n")
         return 0
-    """
 
 def run(vs,win):
     win["RUN"].Update(disabled=True)
