@@ -961,4 +961,4 @@ class mokupipe:
 		for k in del_keys:
 			if k in self.meta_dict:
 				del self.meta_dict[k]
-		gc.collect()
+		flush()
