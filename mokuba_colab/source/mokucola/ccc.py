@@ -3,4 +3,4 @@ import torch
 
 def flush():
 	gc.collect()
-	torch.xpu.empty_cache()
+	torch.cuda.empty_cache()
