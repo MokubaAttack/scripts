@@ -8,7 +8,7 @@ from realesrgan.archs.srvgg_arch import SRVGGNetCompact
 from realesrgan import RealESRGANer
 
 class imgup:
-	def __init__(self,path):
+	def __init__(self,path,dev):
 		if not(isinstance(path,int)):
 			if not(os.path.exists(path)):
 				path=os.getcwd()+'/upscaler/RealESRGAN_x4plus.pth'
@@ -71,7 +71,7 @@ class imgup:
 				tile_pad=10,
 				pre_pad=0,
 				half=True,
-				device="cuda"
+				device=dev
 			)
 			self.path=os.path.basename(path)
 		else:
