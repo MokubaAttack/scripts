@@ -32,9 +32,9 @@ def reset_func(f,s="colab"):
 			a1=b1
 	
 	if s=="colab":
-		file=os.path.dirname(__file__).replace("reset_func.py","colab_default.txt")
+		file=os.path.dirname(__file__)+"/colab_default.txt"
 	else:
-		file=os.path.dirname(__file__).replace("reset_func.py","kaggle_default.txt")
+		file=os.path.dirname(__file__)+"/kaggle_default.txt"
 	k = open(file,"rb")
 	keep = pickle.load(k)
 	k.close()
