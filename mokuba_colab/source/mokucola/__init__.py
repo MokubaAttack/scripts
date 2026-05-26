@@ -1,27 +1,3 @@
-import os
-
-path=__file__.replace("\\","/")
-path=path.replace("mokucola/__init__.py","diffusers_anima")
-
-if not(os.path.exists(path)):
-	import requests
-	import subprocess
-
-	cmd=["pip","install","git+https://github.com/hdae/diffusers-anima.git"]
-	subprocess.run(cmd)
-
-	path1=path+"/loaders/lora_pipeline.py"
-	url1="https://raw.githubusercontent.com/MokubaAttack/scripts_anima/refs/heads/main/lora_pipeline.py"
-	response = requests.get(url1)
-	with open(path1, 'wb') as f:
-		f.write(response.content)
-
-	path2=path+"/pipelines/anima/loading.py"
-	url2="https://raw.githubusercontent.com/MokubaAttack/scripts_anima/refs/heads/main/loading.py"
-	response = requests.get(url2)
-	with open(path2, 'wb') as f:
-		f.write(response.content)
-
 try:
 	import transformers
 	import re
@@ -43,7 +19,7 @@ if v<"00005.00005.00004":
 import sys
 import importlib
 for k in list(sys.modules.keys()):
-	if k.startswith("transformers") or k.startswith("PIL"):
+	if k.startswith("transformers"):
 		try:
 			importlib.reload(sys.modules[k])
 		except:
