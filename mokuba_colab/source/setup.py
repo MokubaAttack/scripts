@@ -16,14 +16,11 @@ setup(
 	install_requires=[
 		"pyexiv2",
 		"compel",
-		"torchsde",
-		"torch @ https://download.pytorch.org/whl/cu128/torch-2.10.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl#sha256=628e89bd5110ced7debee2a57c69959725b7fbc64eab81a39dd70e46c7e28ba5",
-		"torchvision @ https://download-r2.pytorch.org/whl/cu128/torchvision-0.25.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl#sha256=1255a0ca2bf987acf9f103b96c5c4cfe3415fc4a1eef17fa08af527a04a4f573",
+		"torch @ https://download.pytorch.org/whl/cu128/torch-2.10.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
+		"torchvision @ https://download-r2.pytorch.org/whl/cu128/torchvision-0.25.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
 		"diffusers==0.37.0",
 		"realesrgan",
-		"torchao==0.16.0",
 		"accelerate",
 		"PEFT",
-		"IPython",
 	],
 )
