@@ -1,5 +1,4 @@
 import random
-import sys
 import requests
 import io
 from PIL import Image
