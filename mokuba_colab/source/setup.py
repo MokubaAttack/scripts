@@ -22,5 +22,6 @@ setup(
 		"realesrgan",
 		"accelerate",
 		"PEFT",
+		"torchao>=0.16.0",
 	],
 )
