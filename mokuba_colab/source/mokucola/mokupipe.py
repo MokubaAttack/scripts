@@ -21,7 +21,6 @@ from diffusers import (
 	DDIMScheduler,
 	DPMSolverSDEScheduler
 )
-import safetensors
 import torch
 import os
 import numpy
@@ -38,7 +37,10 @@ from .meta import plus_meta
 from .imgup import imgup
 from .discord import to_discord
 from .imgshow import imgshow
-from .ccc import flush
+from .ccc import (
+	flush,
+	getid
+)
 
 sgm_use=[
 	"Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
@@ -84,21 +86,11 @@ class mokupipe:
 		if not(os.path.exists(base_safe)):
 			print("the checkpoint file does not exist.")
 			return -1
-		try:
-			f=safetensors.safe_open(base_safe, framework="pt", device="cpu")
-			self.meta_dict["ckpt"]=f.metadata()["id"]
-			del f
-		except:
-			self.meta_dict["ckpt"]=""
+		self.meta_dict["ckpt"]=getid(base_safe,None)
 		self.meta_dict["ckpt_name"]=base_safe
 
 		if os.path.exists(vae_safe):
-			try:
-				f=safetensors.safe_open(vae_safe, framework="pt", device="cpu")
-				self.meta_dict["vae"]=f.metadata()["id"]
-				del f
-			except:
-				self.meta_dict["vae"]=""
+			self.meta_dict["vae"]=getid(vae_safe,None)
 			self.meta_dict["vae_name"]=vae_safe
 		else:
 			self.meta_dict["vae"]=""
@@ -277,28 +269,9 @@ class mokupipe:
 					self.pipe.fuse_lora(lora_scale= lora_weights[i])
 					self.pipe.unload_lora_weights()
 
-					list1=meta_id_list
-					list2=meta_weight_list
-					try:
-						f=safetensors.safe_open(line+".safetensors", framework="pt", device="cpu")
-						meta_id=f.metadata()["id"]
-						if "," in meta_id:
-							meta_id = meta_id.split(",")
-							for j in meta_id:
-								meta_id_list.append(int(j))
-						else:
-							meta_id_list.append(int(meta_id))
-						meta_weight=f.metadata()["weight"]
-						if "," in meta_weight:
-							meta_weight = meta_weight.split(",")
-							for j in meta_weight:
-								meta_weight_list.append(float(j)*lora_weights[i])
-						else:
-							meta_weight_list.append(float(meta_weight)*lora_weights[i])
-						del f,meta_id,meta_weight
-					except:
-						meta_id_list=list1
-						meta_weight_list=list2
+					list1,list2=getid(line+".safetensors",lora_weights[i])
+					meta_id_list=meta_id_list+list1
+					meta_weight_list=meta_weight_list+list2
 					del list1,list2
 				else:
 					print(line+".safetensors does not exist.")
@@ -328,14 +301,9 @@ class mokupipe:
 					self.prompt_a = self.prompt_a+","+key
 					print(line+".safetensors is loaded.")
 					del key
-					list1=meta_embed_list
-					try:
-						f=safetensors.safe_open(line, framework="pt", device="cpu")
-						meta_embed_list.append(f.metadata()["id"])
-						del f
-					except:
-						meta_embed_list=list1
-					del list1
+					list1,list2=getid(line,1)
+					meta_embed_list=meta_embed_list+list1
+					del list1,list2
 				else:
 					print(line+" does not exist.")
 					return -1
@@ -355,14 +323,9 @@ class mokupipe:
 					self.n_prompt_a=self.n_prompt_a+","+key
 					print(line+".safetensors is loaded.")
 					del key
-					list1=meta_embed_list
-					try:
-						f=safetensors.safe_open(line, framework="pt", device="cpu")
-						meta_embed_list.append(f.metadata()["id"])
-						del f
-					except:
-						meta_embed_list=list1
-					del list1
+					list1,list2=getid(line,1)
+					meta_embed_list=meta_embed_list+list1
+					del list1,list2
 				else:
 					print(line+" does not exist.")
 					return -1
