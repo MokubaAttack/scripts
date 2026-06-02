@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
 	name='mokucola',
-	version='2.10.128',
+	version='2.11.128',
 	packages=find_packages(),
 	include_package_data=True,
 	author='mokuba_attack',
@@ -15,9 +15,9 @@ setup(
 	],
 	install_requires=[
 		"pyexiv2",
-		"compel",
-		"torch @ https://download.pytorch.org/whl/cu128/torch-2.10.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
-		"torchvision @ https://download-r2.pytorch.org/whl/cu128/torchvision-0.25.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
+		"compel>=2.4.0",
+		"torch @ https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
+		"torchvision @ https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
 		"diffusers==0.37.0",
 		"realesrgan",
 		"accelerate",
