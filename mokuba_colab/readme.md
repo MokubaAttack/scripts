@@ -4,13 +4,13 @@ I make My Own Modules from the workflow that I use whenever I make images. My wo
 Change the runtime type to T4 GPU.  
 Next, run next code on Notebook.  
 ```
-!pip install https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-2.10.128.tar.gz
+!pip install https://raw.githubusercontent.com/MokubaAttack/scripts/refs/heads/main/mokuba_colab/mokucola-2.11.128.tar.gz
 
 import mokucola
 ```
 ## explanations
 mokucola.mokucola(  
-loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, j_or_p, url, p, dtype, dev, xf, ser, del_pipe, si  
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, url, p, dtype, dev, xf, ser, del_pipe, si  
 )
 - loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
@@ -71,7 +71,6 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
 - pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
 - url : str ( default : "" ) If you input the webhook url of discord, images are sent to discord.
-- j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
 - dtype : str ( default : "f16" ) It is the calculation accuracy. Choices are f16, f32 and bf16.
 - dev : str ( default : "cuda" ) It is the device that calculates. Choices are cuda and cpu.
@@ -81,7 +80,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - si : bool ( default : True ) If you choice True, output images are shown in the output window.
 - return : mokupipe object 
   
-Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
+Image files are output by naming (index)(the seed).png in the output folder path. 
 If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
 (Example)  
 lora file  
