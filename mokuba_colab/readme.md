@@ -80,7 +80,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - si : bool ( default : True ) If you choice True, output images are shown in the output window.
 - return : mokupipe object 
   
-Image files are output by naming (index)(the seed).png in the output folder path. 
+Image files are output by naming (index)_(the seed).png in the output folder path. 
 If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
 (Example)  
 lora file  
