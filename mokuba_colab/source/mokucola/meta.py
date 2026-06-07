@@ -1,19 +1,18 @@
 import ast
-import pyexiv2
 from PIL import PngImagePlugin
 
 def plus_meta(vs,img):
 	try:
 		if "pr" in vs:
 			if vs["pr"]=="":
-				metadata="None\n\n"
+				metadata="None\n"
 			else:
-				metadata=vs["pr"]+"\n\n"
+				metadata=vs["pr"]+"\n"
 		if "ne" in vs:
 			if vs["ne"]=="":
-				metadata=metadata+"Negative prompt: None\n\n"
+				metadata=metadata+"Negative prompt: None\n"
 			else:
-				metadata=metadata+"Negative prompt: "+vs["ne"]+"\n\n"
+				metadata=metadata+"Negative prompt: "+vs["ne"]+"\n"
 		if "st" in vs:
 			if vs["st"]!="":
 				metadata=metadata+"Steps: "+vs["st"]+", " 
@@ -81,23 +80,15 @@ def plus_meta(vs,img):
 			if vs["up"]!="":
 				metadata=metadata+',{"type":"upscaler","modelVersionId":'+vs["up"]+"}"
 				
-		metadata=metadata+'], Civitai metadata: {}'
+		metadata=metadata+']'
 
 		if "[," in metadata:
 			metadata=metadata.replace("[,","[")
 	
 		image_path=vs["input"]
-		if image_path.endswith(".jpg"):
-			img.save(image_path, 'JPEG' ,quality=85)
-			with pyexiv2.Image(image_path) as img:
-				img.modify_exif({'Exif.Photo.UserComment':metadata})
-		else:
-			pnginfo = PngImagePlugin.PngInfo()
-			pnginfo.add_text("parameters", metadata)
-			img.save(image_path, "PNG", pnginfo=pnginfo)
+		pnginfo = PngImagePlugin.PngInfo()
+		pnginfo.add_text("parameters", metadata)
+		img.save(image_path, "PNG", pnginfo=pnginfo)
 	except:
 		image_path=vs["input"]
-		if image_path.endswith(".jpg"):
-			img.save(image_path, 'JPEG' ,quality=85)
-		else:
-			img.save(image_path, "PNG")
+		img.save(image_path, "PNG")

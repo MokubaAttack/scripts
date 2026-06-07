@@ -65,7 +65,6 @@ class mokupipe:
 		self.n_prompt_a=""
 
 		self.out_folder="output"
-		self.j_or_p="j"
 		self.url=""
 		self.si=True
 
@@ -357,9 +356,8 @@ class mokupipe:
 		self.n_prompt=n_prompt
 		return 1
 
-	def set_outparams(self,out_folder="",j_or_p="j",url="",si=True):
+	def set_outparams(self,out_folder="",url="",si=True):
 		self.out_folder=out_folder
-		self.j_or_p=j_or_p
 		self.url=url
 		self.si=si
 
@@ -467,10 +465,7 @@ class mokupipe:
 				).images[0]
 			if out:
 				self.meta_dict["se"]=str(i)
-				if self.j_or_p=="j":
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
-				else:
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
+				self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
 				plus_meta(self.meta_dict,image)
 				if self.url!="":
 					to_discord(self.meta_dict["input"],self.url)
@@ -626,10 +621,7 @@ class mokupipe:
 				).images[0]
 			if out:
 				self.meta_dict["se"]=str(i)
-				if self.j_or_p=="j":
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
-				else:
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
+				self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
 				plus_meta(self.meta_dict,image)
 				if self.url!="":
 					to_discord(self.meta_dict["input"],self.url)
@@ -901,10 +893,7 @@ class mokupipe:
 
 			if out:
 				self.meta_dict["se"]=str(i)
-				if self.j_or_p=="j":
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".jpg"
-				else:
-					self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
+				self.meta_dict["input"]=self.out_folder+"/"+str(j)+"_"+str(i)+".png"
 				plus_meta(self.meta_dict,image)
 				if self.url!="":
 					to_discord(self.meta_dict["input"],self.url)
