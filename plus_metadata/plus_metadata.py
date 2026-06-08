@@ -1,5 +1,8 @@
-from PIL import Image, PngImagePlugin
-import shutil,pyexiv2
+from PIL import (
+    Image,
+    PngImagePlugin
+)
+import shutil
 
 keys=[
     "input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds","pag","sc","tu","tum","up","cont","ccs"
@@ -46,8 +49,8 @@ def plus(vs,win=None):
     for i in range(len(embeds)):
         embeds[i]=str(embeds[i])
     try:
-        metadata=pr+"\n\n"
-        metadata=metadata+"Negative prompt: "+ne+"\n\n"
+        metadata=pr+"\n"
+        metadata=metadata+"Negative prompt: "+ne+"\n"
         if st!="":
             metadata=metadata+"Steps: "+st+", " 
         if sa!="":
@@ -93,28 +96,28 @@ def plus(vs,win=None):
             metadata=metadata+',{"type":"controlnet","modelVersionId":'+cont+"}"
         if up!="":
             metadata=metadata+',{"type":"upscaler","modelVersionId":'+up+"}"
-        metadata=metadata+'], Civitai metadata: {}'
+        metadata=metadata+']'
 
         if "[," in metadata:
             metadata=metadata.replace("[,","[")
             
-        if path.endswith(".png"):
-            output_path=path.replace(".png","_meta.png")
-            image = Image.open(path)
-            pnginfo = PngImagePlugin.PngInfo()
-            pnginfo.add_text("parameters", metadata)
-            image.save(output_path, "PNG", pnginfo=pnginfo)
-        elif path.endswith(".jpg"):
-            output_path=path.replace(".jpg","_meta.jpg")
-            shutil.copy(path,output_path)
-            with pyexiv2.Image(output_path) as img:
-                img.modify_exif({'Exif.Photo.UserComment':metadata})
+        if path.endswith(".png") or path.endswith(".PNG"):
+            if path.endswith(".png"):
+                output_path=path.replace(".png","_meta.png")
+            else:
+                output_path=path.replace(".PNG","_meta.png")
+        elif path.endswith(".jpg") or path.endswith(".JPG"):
+            output_path=path+".png"
         else:
             if win==None:
                 print("You need to select a png file or a jpg file.")
             else:
                 win["info"].print("You need to select a png file or a jpg file.", end="\n")
             return 0
+        image = Image.open(path)
+        pnginfo = PngImagePlugin.PngInfo()
+        pnginfo.add_text("parameters", metadata)
+        image.save(output_path, "PNG", pnginfo=pnginfo)
         if win==None:
             print("fin")
         else:
@@ -263,7 +266,7 @@ def read_meta(path,win):
             "Tile upscaler:":"tum",
             "controlnet_conditioning_scale:":"ccs"
         }
-        ss=["Karras","beta","exponential","sgm_uniform","simple"]
+        ss=["Karras","beta","exponential","sgm_uniform","simple","uniform","normal"]
         exif_data=exif_data2.split(", ")
         for line in exif_data:
             for ind in inds:
@@ -333,10 +336,14 @@ if __name__=="__main__":
         "DDIM",
         "PLMS",
         "UniPC",
-        "LCM"
+        "LCM",
+        "flowmatch_euler",
+        "euler",
+        "euler_a_rf",
+        "euler_ancestral_rf"
     ]
     sc_list=[
-        "","Karras","beta","exponential","sgm_uniform","simple"
+        "","Karras","beta","exponential","sgm_uniform","simple","uniform","normal"
     ]
     hum_list=["NEAREST","BOX","BILINEAR","HAMMING","BICUBIC","LANCZOS",""]
     ivs={}
