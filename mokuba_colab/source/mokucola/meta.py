@@ -1,5 +1,7 @@
 import ast
 from PIL import PngImagePlugin
+import piexif
+import piexif.helper
 
 def plus_meta(vs,img):
 	try:
@@ -86,9 +88,22 @@ def plus_meta(vs,img):
 			metadata=metadata.replace("[,","[")
 	
 		image_path=vs["input"]
-		pnginfo = PngImagePlugin.PngInfo()
-		pnginfo.add_text("parameters", metadata)
-		img.save(image_path, "PNG", pnginfo=pnginfo)
+		if image_path.endswith(".png"):
+			pnginfo = PngImagePlugin.PngInfo()
+			pnginfo.add_text("parameters", metadata)
+			img.save(image_path, "PNG", pnginfo=pnginfo)
+		else:
+			exif_data=piexif.helper.UserComment.dump(metadata, encoding="unicode")
+            exif_dict={
+                'Exif':{
+                    piexif.ExifIFD.UserComment:exif_data,
+                }
+            }
+            exif_bytes = piexif.dump(exif_dict)
+            img.save(image_path,"JPEG",quality = 85, exif=exif_bytes)
 	except:
 		image_path=vs["input"]
-		img.save(image_path, "PNG")
+		if image_path.endswith(".png"):
+			img.save(image_path, "PNG")
+		else:
+			img.save(image_path,"JPEG",quality = 85)
