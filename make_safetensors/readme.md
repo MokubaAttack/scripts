@@ -13,4 +13,4 @@ pip install diffusers torch FreeSimpleGUI transformers accelerate PEFT pyperclip
 5. Click run button.
 6. After a while, the output file is generated.
 ## Credits
-[huggingface/diffusers](https://github.com/huggingface/diffusers/tree/main)
+- [huggingface/diffusers](https://github.com/huggingface/diffusers/tree/main)
