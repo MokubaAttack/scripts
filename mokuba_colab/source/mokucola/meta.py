@@ -94,13 +94,13 @@ def plus_meta(vs,img):
 			img.save(image_path, "PNG", pnginfo=pnginfo)
 		else:
 			exif_data=piexif.helper.UserComment.dump(metadata, encoding="unicode")
-            exif_dict={
-                'Exif':{
-                    piexif.ExifIFD.UserComment:exif_data,
-                }
-            }
-            exif_bytes = piexif.dump(exif_dict)
-            img.save(image_path,"JPEG",quality = 85, exif=exif_bytes)
+			exif_dict={
+				'Exif':{
+					piexif.ExifIFD.UserComment:exif_data,
+				}
+			}
+			exif_bytes = piexif.dump(exif_dict)
+			img.save(image_path,"JPEG",quality = 85, exif=exif_bytes)
 	except:
 		image_path=vs["input"]
 		if image_path.endswith(".png"):
