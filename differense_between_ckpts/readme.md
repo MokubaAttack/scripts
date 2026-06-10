@@ -25,4 +25,4 @@ differense_between_ckpts.diff_ckpt(
 
 )
 ## Credits
-[kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
+- [kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts)
