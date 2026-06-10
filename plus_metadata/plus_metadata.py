@@ -3,6 +3,8 @@ from PIL import (
     PngImagePlugin
 )
 import shutil
+import piexif
+import piexif.helper
 
 keys=[
     "input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds","pag","sc","tu","tum","up","cont","ccs"
@@ -107,7 +109,10 @@ def plus(vs,win=None):
             else:
                 output_path=path.replace(".PNG","_meta.png")
         elif path.endswith(".jpg") or path.endswith(".JPG"):
-            output_path=path+".png"
+            if path.endswith(".jpg"):
+                output_path=path.replace(".jpg","_meta.jpg")
+            else:
+                output_path=path.replace(".JPG","_meta.jpg")
         else:
             if win==None:
                 print("You need to select a png file or a jpg file.")
@@ -115,9 +120,19 @@ def plus(vs,win=None):
                 win["info"].print("You need to select a png file or a jpg file.", end="\n")
             return 0
         image = Image.open(path)
-        pnginfo = PngImagePlugin.PngInfo()
-        pnginfo.add_text("parameters", metadata)
-        image.save(output_path, "PNG", pnginfo=pnginfo)
+        if path.endswith(".png") or path.endswith(".PNG"):
+            pnginfo = PngImagePlugin.PngInfo()
+            pnginfo.add_text("parameters", metadata)
+            image.save(output_path, "PNG", pnginfo=pnginfo)
+        else:
+            exif_data=piexif.helper.UserComment.dump(metadata, encoding="unicode")
+            exif_dict={
+                'Exif':{
+                    piexif.ExifIFD.UserComment:exif_data,
+                }
+            }
+            exif_bytes = piexif.dump(exif_dict)
+            image.save(output_path,"JPEG",quality = 85, exif=exif_bytes)
         if win==None:
             print("fin")
         else:
