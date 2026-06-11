@@ -98,7 +98,7 @@ You need to input CivitAi's token in "civitai" of the secret key.
 Please use it.  
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MokubaAttack/scripts/blob/main/mokuba_colab/mokuba_diffusers.ipynb)
 ## Credits
-[xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/tree/master)  
-[gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
-[lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
-[OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)  
+- [xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/tree/master)  
+- [gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
+- [lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
+- [OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)  
