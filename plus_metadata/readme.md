@@ -3,7 +3,7 @@ It is a script that write metadata to PNG file and JPG file. That metadata is re
 ## requirements
 python modules
 ```
-pip install pillow FreeSimpleGUI pyperclip pyexiv2
+pip install pillow FreeSimpleGUI pyperclip piexif
 ```
 ## How to use
 1. Run this script.
