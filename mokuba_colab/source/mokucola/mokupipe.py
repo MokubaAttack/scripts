@@ -32,6 +32,7 @@ from compel import (
 	CompelForSD,
 	CompelForSDXL
 )
+from lycoris import create_lycoris_from_weights
 
 from .meta import plus_meta
 from .imgup import imgup
@@ -45,6 +46,47 @@ from .ccc import (
 sgm_use=[
 	"Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
 ]
+
+unet_keys={
+	"middle_block_0":"mid_block_resnets_0",
+	"middle_block_1":"mid_block_attentions_0",
+	"middle_block_2":"mid_block_resnets_1",
+	"in_layers_0": "norm1",
+	"in_layers_2": "conv1",
+	"out_layers_0": "norm2",
+	"out_layers_3": "conv2",
+	"emb_layers_1": "time_emb_proj",
+	"skip_connection": "conv_shortcut",
+	"output_blocks_0_0":"up_blocks_0_resnets_0",
+	"output_blocks_0_1":"up_blocks_0_attentions_0",
+	"output_blocks_1_0":"up_blocks_0_resnets_1",
+	"output_blocks_1_1":"up_blocks_0_attentions_1",
+	"output_blocks_2_0":"up_blocks_0_resnets_2",
+	"output_blocks_2_1":"up_blocks_0_attentions_2",
+	"output_blocks_2_2":"up_blocks_0_upsamplers_0",
+	"output_blocks_3_0":"up_blocks_1_resnets_0",
+	"output_blocks_3_1":"up_blocks_1_attentions_0",
+	"output_blocks_4_0":"up_blocks_1_resnets_1",
+	"output_blocks_4_1":"up_blocks_1_attentions_1",
+	"output_blocks_5_0":"up_blocks_1_resnets_2",
+	"output_blocks_5_1":"up_blocks_1_attentions_2",
+	"output_blocks_5_2":"up_blocks_1_upsamplers_0",
+	"output_blocks_6_0":"up_blocks_2_resnets_0",
+	"output_blocks_7_0":"up_blocks_2_resnets_1",
+	"output_blocks_8_0":"up_blocks_2_resnets_2",
+	"input_blocks_1_0":"down_blocks_0_resnets_0",
+	"input_blocks_2_0":"down_blocks_0_resnets_1",
+	"input_blocks_3_0_op":"down_blocks_0_downsamplers_0_conv",
+	"input_blocks_4_0":"down_blocks_1_resnets_0",
+	"input_blocks_4_1":"down_blocks_1_attentions_0",
+	"input_blocks_5_0":"down_blocks_1_resnets_1",
+	"input_blocks_5_1":"down_blocks_1_attentions_1",
+	"input_blocks_6_0_op":"down_blocks_1_downsamplers_0_conv",
+	"input_blocks_7_0":"down_blocks_2_resnets_0",
+	"input_blocks_7_1":"down_blocks_2_attentions_0",
+	"input_blocks_8_0":"down_blocks_2_resnets_1",
+	"input_blocks_8_1":"down_blocks_2_attentions_1",
+}
 
 def create_gaussian_weight(w,h, sigma=0.3):
 	x = numpy.linspace(-1, 1, w)
@@ -263,15 +305,52 @@ class mokupipe:
 				if line.endswith(".safetensors"):
 					line=line.replace(".safetensors","")
 				if os.path.exists(line+".safetensors"):
-					self.pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=self.dtype)
+					sd=load_file(line+".safetensors")
+					lora_check=True
+					for k in sd:
+						if k.endswith(".lokr_w1") or k.endswith(".lokr_w1_a"):
+							lora_check=False
+							break
+
+					if lora_check:
+						self.pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=self.dtype)
+						self.pipe.fuse_lora(lora_scale= lora_weights[i])
+						self.pipe.unload_lora_weights()
+					else:
+						key_name=[]
+						head=None
+						for k in sd:
+							if k.endswith(".lokr_w1"):
+								key_name.append(k.removesuffix(".lokr_w1"))
+							elif k.endswith(".lokr_w1_a"):
+								key_name.append(k.removesuffix(".lokr_w1_a"))
+							if head==None and len(key_name)>0:
+								if ("input_blocks" in key_name[-1]):
+									head=key_name[-1].index("input_blocks")
+								elif ("down_blocks" in key_name[-1]):
+									head=key_name[-1].index("down_blocks")
+
+						msd={}
+						if head!=None:
+							for k in key_name:
+								m=k[head:].replace(".","_")
+								for k2 in unet_keys:
+									if k2 in m:
+										m=m.replace(k2,unet_keys[k2])
+								for k2 in ["lokr_w1","lokr_w1_a","lokr_w1_b","lokr_w2","lokr_w2_a","lokr_w2_b","lokr_t1","lokr_t2","alpha","dora_scale"]:
+									if k+"."+k2 in sd:
+										msd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.unet, weights_sd=msd)
+						wrapper.merge_to()
+						del msd
+
 					print(line+".safetensors is loaded.")
-					self.pipe.fuse_lora(lora_scale= lora_weights[i])
-					self.pipe.unload_lora_weights()
 
 					list1,list2=getid(line+".safetensors",lora_weights[i])
 					meta_id_list=meta_id_list+list1
 					meta_weight_list=meta_weight_list+list2
-					del list1,list2
+					del list1,list2,sd
 				else:
 					print(line+".safetensors does not exist.")
 					return -1

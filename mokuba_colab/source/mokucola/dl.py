@@ -8,7 +8,7 @@ from safetensors.torch import (
 )
 
 def dlc(ver_id,path,token,lora=False):
-	url = "https://civitai.com/api/download/models/"+str(ver_id)+"?type=Model&format=SafeTensor&token="+str(token)
+	url = "https://civitai.com/api/download/models/"+str(ver_id)+"?token="+str(token)
 	data = requests.get(url,stream=True)
 	meta_dict={}
 	meta_dict["id"]=str(ver_id)
