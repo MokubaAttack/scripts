@@ -14,7 +14,6 @@ setup(
 		'Programming Language :: Python :: 3.12',
 	],
 	install_requires=[
-		"pyexiv2",
 		"compel>=2.4.0",
 		"torch @ https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
 		"torchvision @ https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl",
@@ -24,5 +23,6 @@ setup(
 		"PEFT",
 		"torchao>=0.16.0",
 		"piexif",
+		"lycoris-lora",
 	],
 )
