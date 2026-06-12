@@ -33,6 +33,31 @@ from compel import (
 	CompelForSDXL
 )
 from lycoris import create_lycoris_from_weights
+from lycoris.modules.locon import LoConModule
+from lycoris.modules.loha import LohaModule
+from lycoris.modules.lokr import LokrModule
+from lycoris.modules.full import FullModule
+from lycoris.modules.norms import NormModule
+from lycoris.modules.diag_oft import DiagOFTModule
+from lycoris.modules.boft import ButterflyOFTModule
+from lycoris.modules.glora import GLoRAModule
+from lycoris.modules.dylora import DyLoraModule
+from lycoris.modules.ia3 import IA3Module
+from lycoris.modules.tlora import TLoraModule
+
+MODULE_LIST = [
+	LoConModule,
+	LohaModule,
+	IA3Module,
+	LokrModule,
+	FullModule,
+	NormModule,
+	DiagOFTModule,
+	ButterflyOFTModule,
+	GLoRAModule,
+	DyLoraModule,
+	TLoraModule,
+]
 
 from .meta import plus_meta
 from .imgup import imgup
@@ -306,10 +331,10 @@ class mokupipe:
 					line=line.replace(".safetensors","")
 				if os.path.exists(line+".safetensors"):
 					sd=load_file(line+".safetensors")
-					lora_check=True
+					lora_check=False
 					for k in sd:
-						if k.endswith(".lokr_w1") or k.endswith(".lokr_w1_a"):
-							lora_check=False
+						if k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight"):
+							lora_check=True
 							break
 
 					if lora_check:
@@ -317,13 +342,23 @@ class mokupipe:
 						self.pipe.fuse_lora(lora_scale= lora_weights[i])
 						self.pipe.unload_lora_weights()
 					else:
+						first_key=list(sd)[0]
+						MODULE_type=None
+						for m in MODULE_LIST:
+							for k in m.weight_list_det:
+								if first_key.endswith(k):
+									MODULE_type=m
+									break
+							if MODULE_type!=None:
+								break
+						if MODULE_type==None:
+							raise ValueError('These weights are not supported.')
 						key_name=[]
 						head=None
 						for k in sd:
-							if k.endswith(".lokr_w1"):
-								key_name.append(k.removesuffix(".lokr_w1"))
-							elif k.endswith(".lokr_w1_a"):
-								key_name.append(k.removesuffix(".lokr_w1_a"))
+							for k2 in MODULE_type.weight_list_det:
+								if k.endswith("."+k2):
+									key_name.append(k.removesuffix("."+k2))
 							if head==None and len(key_name)>0:
 								if ("input_blocks" in key_name[-1]):
 									head=key_name[-1].index("input_blocks")
@@ -337,7 +372,7 @@ class mokupipe:
 								for k2 in unet_keys:
 									if k2 in m:
 										m=m.replace(k2,unet_keys[k2])
-								for k2 in ["lokr_w1","lokr_w1_a","lokr_w1_b","lokr_w2","lokr_w2_a","lokr_w2_b","lokr_t1","lokr_t2","alpha","dora_scale"]:
+								for k2 in MODULE_type.weight_list:
 									if k+"."+k2 in sd:
 										msd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
 
