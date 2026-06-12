@@ -340,12 +340,14 @@ class mokupipe:
 						self.pipe.fuse_lora(lora_scale= lora_weights[i])
 						self.pipe.unload_lora_weights()
 					else:
-						first_key=list(sd)[0]
 						MODULE_type=None
 						for m in MODULE_LIST:
 							for k in m.weight_list_det:
-								if first_key.endswith(k):
-									MODULE_type=m
+								for k2 in sd:
+									if k2.endswith(k):
+										MODULE_type=m
+										break
+								if MODULE_type!=None:
 									break
 							if MODULE_type!=None:
 								break
