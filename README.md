@@ -31,3 +31,4 @@ I make [extract_lora_from_models.py](https://github.com/kohya-ss/sd-scripts/blob
 - [gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
 - [lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
 - [OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)  
+- [KohakuBlueleaf/LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
