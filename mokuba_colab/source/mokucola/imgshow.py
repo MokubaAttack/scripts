@@ -9,5 +9,7 @@ def imgshow(imgs):
 		simgs=imgs+[Image.new('RGB', imgs[-1].size, (0, 0, 0))]
 	else:
 		simgs=imgs
-	display(make_image_grid(simgs, rows=r, cols=2).resize((600,400*r)))
+	x,y=imgs[-1].size
+	x=round(2*x/y*400)
+	display(make_image_grid(simgs, rows=r, cols=2).resize((x,400*r)))
 	
