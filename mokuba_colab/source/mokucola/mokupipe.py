@@ -43,7 +43,6 @@ from lycoris.modules.boft import ButterflyOFTModule
 from lycoris.modules.glora import GLoRAModule
 from lycoris.modules.dylora import DyLoraModule
 from lycoris.modules.ia3 import IA3Module
-from lycoris.modules.tlora import TLoraModule
 
 MODULE_LIST = [
 	LoConModule,
@@ -56,7 +55,6 @@ MODULE_LIST = [
 	ButterflyOFTModule,
 	GLoRAModule,
 	DyLoraModule,
-	TLoraModule,
 ]
 
 from .meta import plus_meta
