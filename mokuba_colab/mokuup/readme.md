@@ -2,10 +2,10 @@
 I make the script of [gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler) to change ckpt, lora, vae and embedding. 
 ## explanations
 mokucola.mokuup(  
-img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interpolation, sample, sgm, seed, pos_emb, neg_emb, pag, url, out_folder, j_or_p, p, prompt, n_prompt, ccs, tile_size, ol, dtype, dev, xf, ser, del_pipe, si  
+img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interpolation, sample, sgm, seed, pos_emb, neg_emb, pag, url, out_folder, p, prompt, n_prompt, ccs, tile_size, ol, dtype, dev, ser, del_pipe, si  
 )  
 - img_path : str ( default : "" ) It is a path of a image that is upscaled.
-- loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
+- loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path. LyCORIS is supported too.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
 - up : float ( default : 2 ) It is the upscale.
 - pic_number : int ( default : 10 ) It is the number of the output images.
@@ -50,7 +50,6 @@ img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interp
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
 - pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
 - url : str ( default : "" ) If you input the webhook url of discord, images are sent to discord.
-- j_or_p : str ( default : "j" ) It is the format of output files. "j" is JPG format, and "p" is PNG format.
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
 - prompt : str ( default : "masterpiece,best quality,ultra detailed" ) It is the prompt.
 - n_prompt : str (default : "worst quality,low quality,normal quality" ) It is the negative prompt.
@@ -59,13 +58,12 @@ img_path, base_safe, vae_safe, loras, lora_weights, up, gs, step, ss, cs, Interp
 - ol : int ( default : 0 ) It is overlap size. When you input 0, it is selected automatically.
 - dtype : str ( default : "f16" ) It is the calculation accuracy. Choices are f16, f32 and bf16.
 - dev : str ( default : "cuda" ) It is the device that calculates. Choices are cuda and cpu.
-- xf : bool ( default : False ) If you choice True, xformers are used.
 - ser : str ( default : "colab" ) In google colab, please input "colab". In kaggle, please input "kaggle".
 - del_pipe : bool ( default : True ) If you choice True, the mokupipe object is deleted and None is returned.
 - si : bool ( default : True ) If you choice True, output images are shown in the output window.
 - return : mokupipe object
 
-Image files are output by naming (index)(the seed).png or (index)(the seed).jpg in the output folder path. 
+Image files are output by naming (index)_(the seed).jpg in the output folder path. 
 If safetensors files have CivitAi's Version ID in a item of "id" of metadata (In case of a lora file, lora's weight in a item of "weight" is needed too) , Generation metadata is baked in Output files.  
 (Example)  
 lora file  
