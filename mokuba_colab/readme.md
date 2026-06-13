@@ -10,9 +10,9 @@ import mokucola
 ```
 ## explanations
 mokucola.mokucola(  
-loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, url, p, dtype, dev, xf, ser, del_pipe, si  
+loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step, ss, cs, Interpolation, sample, sgm, seed, out_folder, pos_emb, neg_emb, base_safe, vae_safe, pag, url, p, dtype, dev, ser, del_pipe, si  
 )
-- loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path.
+- loras : str list ( default : [] ) It is the name list of the lora file excluding extension. If there is not that file in the working folder, you must input the absolute path. LyCORIS is supported too.
 - lora_weights : float list ( default : [] ) It is the lora's weight list.
 - prompt : str ( default : "" ) It is the prompt.
 - n_prompt : str (default : "" ) It is the negative prompt.
@@ -74,7 +74,6 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
 - dtype : str ( default : "f16" ) It is the calculation accuracy. Choices are f16, f32 and bf16.
 - dev : str ( default : "cuda" ) It is the device that calculates. Choices are cuda and cpu.
-- xf : bool ( default : False ) If you choice True, xformers are used.
 - ser : str ( default : "colab" ) In google colab, please input "colab". In kaggle, please input "kaggle".
 - del_pipe : bool ( default : True ) If you choice True, the mokupipe object is deleted and None is returned.
 - si : bool ( default : True ) If you choice True, output images are shown in the output window.
@@ -102,3 +101,4 @@ Please use it.
 - [gokayfem/Tile-Upscaler](https://github.com/gokayfem/Tile-Upscaler)  
 - [lllyasviel/control_v11f1e_sd15_tile](https://huggingface.co/lllyasviel/control_v11f1e_sd15_tile)  
 - [OzzyGT/SDXL_Controlnet_Tile_Realistic](https://huggingface.co/OzzyGT/SDXL_Controlnet_Tile_Realistic)  
+- [KohakuBlueleaf/LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
