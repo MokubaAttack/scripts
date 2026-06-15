@@ -26,7 +26,10 @@ import os
 import numpy
 import cv2
 from PIL import Image
-from safetensors.torch import load_file
+from safetensors.torch import (
+	load_file,
+	save_file
+)
 from IPython.display import clear_output
 from compel import (
 	CompelForSD,
@@ -336,9 +339,51 @@ class mokupipe:
 							break
 
 					if lora_check:
-						self.pipe.load_lora_weights(".",weight_name=line+".safetensors",torch_dtype=self.dtype)
+						ukeys=[]
+						for name, module in self.pipe.unet.named_modules():
+							ukeys.append(name.replace(".","_"))
+						t1keys=[]
+						for name, module in self.pipe.text_encoder.named_modules():
+							t1keys.append(name.replace(".","_"))
+						t2keys=[]
+						for name, module in self.pipe.text_encoder_2.named_modules():
+							t2keys.append(name.replace(".","_"))
+
+						msd={}
+						for k in sd:
+							if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
+								continue
+							if k.endswith(".lora_up.weight"):
+								m=k.removesuffix(".lora_up.weight")
+							else:
+								m=k.removesuffix(".lora_B.weight")
+							if m.replace(".","_").startswith("lora_unet_"):
+								m2=m.replace(".","_").removeprefix("lora_unet_")
+								for k2 in unet_keys:
+									if k2 in m2:
+										m2=m2.replace(k2,unet_keys[k2])
+								if m2 in ukeys:
+									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+										if m+k2 in sd:
+											msd[m+k2]=sd[m+k2]
+							elif m.replace(".","_").startswith("lora_te1_"):
+								if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
+									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+										if m+k2 in sd:
+											msd[m+k2]=sd[m+k2]
+							elif m.replace(".","_").startswith("lora_te2_"):
+								if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
+									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+										if m+k2 in sd:
+											msd[m+k2]=sd[m+k2]
+
+						if msd=={}:
+							raise ValueError('These weights are not supported.')
+							
+						self.pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd,torch_dtype=self.dtype)
 						self.pipe.fuse_lora(lora_scale= lora_weights[i])
 						self.pipe.unload_lora_weights()
+						del msd,ukeys,t1keys,t2keys
 					else:
 						MODULE_type=None
 						for m in MODULE_LIST:

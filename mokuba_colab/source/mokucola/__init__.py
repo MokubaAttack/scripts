@@ -28,8 +28,7 @@ for k in list(sys.modules.keys()):
 try:
 	from .workflow import (
 		mokucola,
-		mokuup,
-		mokuani
+		mokuup
 	)
 	from .dl import (
 		dlc,
@@ -40,8 +39,7 @@ try:
 	f=open(path,"w")
 	f.write("from .workflow import (\n")
 	f.write("	mokucola,\n")
-	f.write("	mokuup,\n")
-	f.write("	mokuani\n")
+	f.write("	mokuup\n")
 	f.write(")\n")
 	f.write("from .dl import (\n")
 	f.write("	dlc,\n")
@@ -69,8 +67,7 @@ except:
 
 	from .workflow import (
 		mokucola,
-		mokuup,
-		mokuani
+		mokuup
 	)
 	from .dl import (
 		dlc,
@@ -81,8 +78,7 @@ except:
 	f=open(path,"w")
 	f.write("from .workflow import (\n")
 	f.write("	mokucola,\n")
-	f.write("	mokuup,\n")
-	f.write("	mokuani\n")
+	f.write("	mokuup\n")
 	f.write(")\n")
 	f.write("from .dl import (\n")
 	f.write("	dlc,\n")

@@ -2,12 +2,10 @@ import requests
 import os
 import json
 import shutil
-from safetensors.torch import (
-	save_file,
-	load_file
-)
+from safetensors.torch import save_file
+import torch
 
-def dlc(ver_id,path,token,lora=False):
+def dlc(ver_id,path,token):
 	url = "https://civitai.com/api/download/models/"+str(ver_id)+"?token="+str(token)
 	data = requests.get(url,stream=True)
 	meta_dict={}
@@ -65,34 +63,6 @@ def dlc(ver_id,path,token,lora=False):
 		k="."+path.split(".")[-1]
 		path=path.replace(k,".safetensors")
 		save_file(model,path,metadata=meta_dict)
-	if lora:
-		unnecessary=[
-			"lora_unet_out_2.alpha",
-			"lora_unet_out_2.lora_down.weight",
-			"lora_unet_out_2.lora_up.weight",
-			"lora_unet_input_blocks_0_0.alpha",
-			"lora_unet_input_blocks_0_0.lora_down.weight",
-			"lora_unet_input_blocks_0_0.lora_up.weight",
-			"lora_unet_label_emb_0_0.alpha",
-			"lora_unet_label_emb_0_0.lora_down.weight",
-			"lora_unet_label_emb_0_0.lora_up.weight",
-			"lora_unet_label_emb_0_2.alpha",
-			"lora_unet_label_emb_0_2.lora_down.weight",
-			"lora_unet_label_emb_0_2.lora_up.weight",
-			"lora_unet_time_embed_0.alpha",
-			"lora_unet_time_embed_0.lora_down.weight",
-			"lora_unet_time_embed_0.lora_up.weight",
-			"lora_unet_time_embed_2.alpha",
-			"lora_unet_time_embed_2.lora_down.weight",
-			"lora_unet_time_embed_2.lora_up.weight"
-		]
-		model=load_file(path)
-		model2={}
-		for k in model:
-			if not(k in unnecessary):
-				model2[k]=model[k]
-		del model
-		save_file(model2,path,metadata=meta_dict)
 
 def dlk(dataname,username,token,path):
 	url="https://www.kaggle.com/api/v1/datasets/download/"+username+"/"+dataname
