@@ -3,7 +3,7 @@ It is a script that burns a vae and loras in a checkpoint. This script is based 
 ## requirements
 python modules
 ```
-pip install diffusers torch FreeSimpleGUI transformers accelerate PEFT pyperclip
+pip install diffusers torch FreeSimpleGUI transformers accelerate PEFT pyperclip lycoris-lora
 ```
 ## How to use
 1. Run this script.
@@ -14,3 +14,4 @@ pip install diffusers torch FreeSimpleGUI transformers accelerate PEFT pyperclip
 6. After a while, the output file is generated.
 ## Credits
 - [huggingface/diffusers](https://github.com/huggingface/diffusers/tree/main)
+- [KohakuBlueleaf/LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS)
