@@ -251,7 +251,7 @@ def read_meta(path,win):
 			exif_data = img.info['parameters']
 
 		exif_data=exif_data.split("\n")
-		exif_data2=exif_data.pop(-1)
+		exif_data2=str(exif_data.pop(-1).encode())
 		k=None
 		for i in range(len(exif_data)):
 			if "\x00" in exif_data[i]:
@@ -265,6 +265,7 @@ def read_meta(path,win):
 			pro="".join(exif_data[:k])
 			neg="".join(exif_data[k:])
 			neg=neg.replace("Negative prompt: ","")
+		pro=pro.removeprefix("UNICODE")
 		win["pr"].update(pro)
 		win["ne"].update(neg)
 		inds={
@@ -282,7 +283,7 @@ def read_meta(path,win):
 			"controlnet_conditioning_scale:":"ccs"
 		}
 		ss=["Karras","beta","exponential","sgm_uniform","simple","uniform","normal"]
-		exif_data=exif_data2.split(", ")
+		exif_data=exif_data2.replace(r"\x00","").removesuffix("'").removeprefix("b'").split(", ")
 		for line in exif_data:
 			for ind in inds:
 				if line.startswith(ind):
