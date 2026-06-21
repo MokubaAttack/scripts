@@ -238,7 +238,7 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 	sds=[]
 	keys=[]
 	lbw_weights=[]
-	for lora,lbw in zip(model,lbws):
+	for lora,lbw in zip(models,lbws):
 		sd=load_file(lora)
 		for k in ok:
 			if k in sd:
