@@ -227,7 +227,7 @@ def format_lbws(lbws):
 	return lbws, is_sdxl, LBW_TARGET_IDX
 
 def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, merge_dtype,win):
-	merged_sd = {}
+	merged_lora_sd = {}
 
 	if lbws:
 		lbws, is_sdxl, LBW_TARGET_IDX = format_lbws(lbws)
@@ -238,7 +238,8 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 	sds=[]
 	keys=[]
 	lbw_weights=[]
-	for lora,lbw in zip(models,lbws):
+	i=0
+	for lora in models:
 		sd=load_file(lora)
 		for k in ok:
 			if k in sd:
@@ -248,10 +249,12 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 		if lbws==[]:
 			lbw_weights.append(False)
 		else:
+			lbw=lbws[i]
 			weights = [1] * 26
 			for index, value in zip(LBW_TARGET_IDX, lbw):
 				weights[index] = value
 			lbw_weights.append(weights)
+		i+=1
 
 	keys=list(set(keys))
 	key_sum=len(keys)
