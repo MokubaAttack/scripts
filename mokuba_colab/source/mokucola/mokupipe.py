@@ -366,10 +366,9 @@ class mokupipe:
 							t1keys=[]
 							for name, module in self.pipe.text_encoder.named_modules():
 								t1keys.append(name.replace(".","_"))
-							if self.is_sdxl:
-								t2keys=[]
-								for name, module in self.pipe.text_encoder_2.named_modules():
-									t2keys.append(name.replace(".","_"))
+							t2keys=[]
+							for name, module in self.pipe.text_encoder_2.named_modules():
+								t2keys.append(name.replace(".","_"))
 	
 							msd={}
 							for k in sd:
