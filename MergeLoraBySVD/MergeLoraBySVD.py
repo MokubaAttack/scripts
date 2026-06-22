@@ -241,9 +241,43 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 	i=0
 	for lora in models:
 		sd=load_file(lora)
-		for k in ok:
-			if k in sd:
-				del sd[k]
+		
+		for k in sd:
+			if not(k.endswith(".lora_down.weight")):
+				if k in ok:
+					del sd[k]
+				continue
+			k=k.removesuffix(".lora_down.weight")
+			lora_name = k.replace(".", "_")
+			if lora_name.startswith("lora_unet"):
+				if "down_blocks_1_attentions_0" in lora_name:
+					lora_name=lora_name.replace("down_blocks_1_attentions_0","input_blocks_4_1")
+				elif "down_blocks_1_attentions_1" in lora_name:
+					lora_name=lora_name.replace("down_blocks_1_attentions_1","input_blocks_5_1")
+				elif "down_blocks_2_attentions_0" in lora_name:
+					lora_name=lora_name.replace("down_blocks_2_attentions_0","input_blocks_7_1")
+				elif "down_blocks_2_attentions_1" in lora_name:
+					lora_name=lora_name.replace("down_blocks_2_attentions_1","input_blocks_8_1")
+				elif "up_blocks_0_attentions_0" in lora_name:
+					lora_name=lora_name.replace("up_blocks_0_attentions_0","output_blocks_0_1")
+				elif "up_blocks_0_attentions_1" in lora_name:
+					lora_name=lora_name.replace("up_blocks_0_attentions_1","output_blocks_1_1")
+				elif "up_blocks_0_attentions_2" in lora_name:
+					lora_name=lora_name.replace("up_blocks_0_attentions_2","output_blocks_2_1")
+				elif "up_blocks_1_attentions_0" in lora_name:
+					lora_name=lora_name.replace("up_blocks_1_attentions_0","output_blocks_3_1")
+				elif "up_blocks_1_attentions_1" in lora_name:
+					lora_name=lora_name.replace("up_blocks_1_attentions_1","output_blocks_4_1")
+				elif "up_blocks_1_attentions_2" in lora_name:
+					lora_name=lora_name.replace("up_blocks_1_attentions_2","output_blocks_5_1")
+				elif "mid_block_attentions_0" in lora_name:
+					lora_name=lora_name.replace("mid_block_attentions_0","middle_block_1")
+			for k2 in [".lora_down.weight",".lora_up.weight",".alpha"]:
+				if k+k2 in sd:
+					sd[lora_name+k2]=sd[k+k2]
+					if k!=lora_name:
+						del sd[k+k2]
+	
 		sds.append(sd)
 		keys=keys+list(sd)
 		if lbws==[]:
