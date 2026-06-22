@@ -1,21 +1,8 @@
-import subprocess
-
-cmd=["pip","install","transformers==5.5.4"]
-subprocess.run(cmd)
-
-import sys
-import importlib
-for k in list(sys.modules.keys()):
-	if k.startswith("transformers"):
-		try:
-			importlib.reload(sys.modules[k])
-		except:
-			pass
-
 try:
 	from .workflow import (
 		mokucola,
-		mokuup
+		mokuup,
+		mokusp
 	)
 	from .dl import (
 		dlc,
@@ -26,7 +13,8 @@ try:
 	f=open(path,"w")
 	f.write("from .workflow import (\n")
 	f.write("	mokucola,\n")
-	f.write("	mokuup\n")
+	f.write("	mokuup,\n")
+	f.write("	mokusp\n")
 	f.write(")\n")
 	f.write("from .dl import (\n")
 	f.write("	dlc,\n")
@@ -54,7 +42,8 @@ except:
 
 	from .workflow import (
 		mokucola,
-		mokuup
+		mokuup,
+		mokusp
 	)
 	from .dl import (
 		dlc,
@@ -65,7 +54,8 @@ except:
 	f=open(path,"w")
 	f.write("from .workflow import (\n")
 	f.write("	mokucola,\n")
-	f.write("	mokuup\n")
+	f.write("	mokuup,\n")
+	f.write("	mokusp\n")
 	f.write(")\n")
 	f.write("from .dl import (\n")
 	f.write("	dlc,\n")

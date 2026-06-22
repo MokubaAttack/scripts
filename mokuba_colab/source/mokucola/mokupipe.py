@@ -138,6 +138,7 @@ class mokupipe:
 
 		self.dtype=torch.float16
 		self.dev="cuda"
+		self.emco=False
 
 	def mkpipe(
 		self,
@@ -538,6 +539,7 @@ class mokupipe:
 		else:
 			self.pipe=StableDiffusionPAGPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
 		self.pipe.to(self.dev)
+			
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
 		self.meta_dict["pr"]=prompt
@@ -648,6 +650,7 @@ class mokupipe:
 		else:
 			self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
 		self.pipe.to(self.dev)
+
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
 		self.meta_dict["pr"]=prompt
