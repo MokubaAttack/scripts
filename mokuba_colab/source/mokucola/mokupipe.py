@@ -73,46 +73,66 @@ sgm_use=[
 	"Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
 ]
 
-unet_keys={
-	"middle_block_0":"mid_block_resnets_0",
-	"middle_block_1":"mid_block_attentions_0",
-	"middle_block_2":"mid_block_resnets_1",
+sdxl_unet_keys={
 	"in_layers_0": "norm1",
 	"in_layers_2": "conv1",
 	"out_layers_0": "norm2",
 	"out_layers_3": "conv2",
 	"emb_layers_1": "time_emb_proj",
-	"skip_connection": "conv_shortcut",
-	"output_blocks_0_0":"up_blocks_0_resnets_0",
-	"output_blocks_0_1":"up_blocks_0_attentions_0",
-	"output_blocks_1_0":"up_blocks_0_resnets_1",
-	"output_blocks_1_1":"up_blocks_0_attentions_1",
-	"output_blocks_2_0":"up_blocks_0_resnets_2",
-	"output_blocks_2_1":"up_blocks_0_attentions_2",
-	"output_blocks_2_2":"up_blocks_0_upsamplers_0",
-	"output_blocks_3_0":"up_blocks_1_resnets_0",
-	"output_blocks_3_1":"up_blocks_1_attentions_0",
-	"output_blocks_4_0":"up_blocks_1_resnets_1",
-	"output_blocks_4_1":"up_blocks_1_attentions_1",
-	"output_blocks_5_0":"up_blocks_1_resnets_2",
-	"output_blocks_5_1":"up_blocks_1_attentions_2",
-	"output_blocks_5_2":"up_blocks_1_upsamplers_0",
-	"output_blocks_6_0":"up_blocks_2_resnets_0",
-	"output_blocks_7_0":"up_blocks_2_resnets_1",
-	"output_blocks_8_0":"up_blocks_2_resnets_2",
-	"input_blocks_1_0":"down_blocks_0_resnets_0",
-	"input_blocks_2_0":"down_blocks_0_resnets_1",
-	"input_blocks_3_0_op":"down_blocks_0_downsamplers_0_conv",
-	"input_blocks_4_0":"down_blocks_1_resnets_0",
-	"input_blocks_4_1":"down_blocks_1_attentions_0",
-	"input_blocks_5_0":"down_blocks_1_resnets_1",
-	"input_blocks_5_1":"down_blocks_1_attentions_1",
-	"input_blocks_6_0_op":"down_blocks_1_downsamplers_0_conv",
-	"input_blocks_7_0":"down_blocks_2_resnets_0",
-	"input_blocks_7_1":"down_blocks_2_attentions_0",
-	"input_blocks_8_0":"down_blocks_2_resnets_1",
-	"input_blocks_8_1":"down_blocks_2_attentions_1",
 }
+for i in range(3):
+	for j in range(2):
+		sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_0"]="down_blocks_"+str(i)+"_resnets_"+str(j)
+		if i > 0:
+			sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_1"]="down_blocks_"+str(i)+"_attentions_"+str(j)
+
+	for j in range(4):
+		sdxl_unet_keys["output_blocks_"+str(3 * i + j)+"_0"]="up_blocks_"+str(i)+"_resnets_"+str(j)
+		if i < 2:
+			sdxl_unet_keys["output_blocks_"+str(3 * i + j)+"_1"]="up_blocks_"+str(i)+"_attentions_"+str(j)
+
+	if i < 3:
+		sdxl_unet_keys["input_blocks_"+str(3 * (i + 1))+"_0_op"]="down_blocks_"+str(i)+"_downsamplers_0_conv"
+
+		if i==0:
+			sdxl_unet_keys["output_blocks_"+str(3 * i + 2)+"_1"]="up_blocks_"+str(i)+"_upsamplers_0"
+		else:
+			sdxl_unet_keys["output_blocks_"+str(3 * i + 2)+"_2"]="up_blocks_"+str(i)+"_upsamplers_0"
+sdxl_unet_keys["output_blocks_2_1_conv"]="output_blocks_2_2_conv"
+
+sdxl_unet_keys["middle_block_1"]="mid_block_attentions_0"
+for j in range(2):
+	sdxl_unet_keys["middle_block_"+str(2 * j)]="mid_block_resnets_"+str(j)
+	
+sd_unet_keys={
+	"in_layers_0": "norm1",
+	"in_layers_2": "conv1",
+	"out_layers_0": "norm2",
+	"out_layers_3": "conv2",
+	"emb_layers_1": "time_emb_proj",
+}
+for i in range(4):
+	for j in range(2):
+		sd_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_0"]="down_blocks_"+str(i)+"_resnets_"+str(j)
+		if i < 3:
+			sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_1"]="down_blocks_"+str(i)+"_attentions_"+str(j)
+
+	for j in range(3):
+		sd_unet_keys["output_blocks_"+str(3 * i + j)+"_0"]="up_blocks_"+str(i)+"_resnets_"+str(j)
+		if i > 0:
+			sd_unet_keys["output_blocks_"+str(3 * i + j)+"_1"]="up_blocks_"+str(i)+"_attentions_"+str(j)
+
+	if i < 3:
+		sd_unet_keys["input_blocks_"+str(3 * (i + 1))+"_0_op"]="down_blocks_"+str(i)+"_downsamplers_0_conv"
+
+		if i==0:
+			sd_unet_keys["output_blocks_"+str(3 * i + 2)+"_1"]="up_blocks_"+str(i)+"_upsamplers_0"
+		else:
+			sd_unet_keys["output_blocks_"+str(3 * i + 2)+"_2"]="up_blocks_"+str(i)+"_upsamplers_0"
+
+sd_unet_keys["middle_block_1"]="mid_block_attentions_0"
+for j in range(2):
+	sd_unet_keys["middle_block_"+str(2 * j)]="mid_block_resnets_"+str(j)
 
 def create_gaussian_weight(w,h, sigma=0.3):
 	x = numpy.linspace(-1, 1, w)
@@ -138,7 +158,6 @@ class mokupipe:
 
 		self.dtype=torch.float16
 		self.dev="cuda"
-		self.emco=False
 
 	def mkpipe(
 		self,
@@ -340,43 +359,75 @@ class mokupipe:
 							break
 
 					if lora_check:
-						ukeys=[]
-						for name, module in self.pipe.unet.named_modules():
-							ukeys.append(name.replace(".","_"))
-						t1keys=[]
-						for name, module in self.pipe.text_encoder.named_modules():
-							t1keys.append(name.replace(".","_"))
-						t2keys=[]
-						for name, module in self.pipe.text_encoder_2.named_modules():
-							t2keys.append(name.replace(".","_"))
-
-						msd={}
-						for k in sd:
-							if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
-								continue
-							if k.endswith(".lora_up.weight"):
-								m=k.removesuffix(".lora_up.weight")
-							else:
-								m=k.removesuffix(".lora_B.weight")
-							if m.replace(".","_").startswith("lora_unet_"):
-								m2=m.replace(".","_").removeprefix("lora_unet_")
-								for k2 in unet_keys:
-									if k2 in m2:
-										m2=m2.replace(k2,unet_keys[k2])
-								if m2 in ukeys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
-							elif m.replace(".","_").startswith("lora_te1_"):
-								if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
-							elif m.replace(".","_").startswith("lora_te2_"):
-								if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
+						if self.is_sdxl:
+							ukeys=[]
+							for name, module in self.pipe.unet.named_modules():
+								ukeys.append(name.replace(".","_"))
+							t1keys=[]
+							for name, module in self.pipe.text_encoder.named_modules():
+								t1keys.append(name.replace(".","_"))
+							if self.is_sdxl:
+								t2keys=[]
+								for name, module in self.pipe.text_encoder_2.named_modules():
+									t2keys.append(name.replace(".","_"))
+	
+							msd={}
+							for k in sd:
+								if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
+									continue
+								if k.endswith(".lora_up.weight"):
+									m=k.removesuffix(".lora_up.weight")
+								else:
+									m=k.removesuffix(".lora_B.weight")
+								if m.replace(".","_").startswith("lora_unet_"):
+									m2=m.replace(".","_").removeprefix("lora_unet_")
+									for k2 in sdxl_unet_keys:
+										if k2 in m2:
+											m2=m2.replace(k2,sdxl_unet_keys[k2])
+									if m2 in ukeys:
+										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+											if m+k2 in sd:
+												msd[m+k2]=sd[m+k2]
+								elif m.replace(".","_").startswith("lora_te1_"):
+									if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
+										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+											if m+k2 in sd:
+												msd[m+k2]=sd[m+k2]
+								elif m.replace(".","_").startswith("lora_te2_"):
+									if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
+										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+											if m+k2 in sd:
+												msd[m+k2]=sd[m+k2]
+						else:
+							ukeys=[]
+							for name, module in self.pipe.unet.named_modules():
+								ukeys.append(name.replace(".","_"))
+							t1keys=[]
+							for name, module in self.pipe.text_encoder.named_modules():
+								t1keys.append(name.replace(".","_"))
+								
+							msd={}
+							for k in sd:
+								if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
+									continue
+								if k.endswith(".lora_up.weight"):
+									m=k.removesuffix(".lora_up.weight")
+								else:
+									m=k.removesuffix(".lora_B.weight")
+								if m.replace(".","_").startswith("lora_unet_"):
+									m2=m.replace(".","_").removeprefix("lora_unet_")
+									for k2 in sd_unet_keys:
+										if k2 in m2:
+											m2=m2.replace(k2,sd_unet_keys[k2])
+									if m2 in ukeys:
+										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+											if m+k2 in sd:
+												msd[m+k2]=sd[m+k2]
+								elif m.replace(".","_").startswith("lora_te_"):
+									if m.replace(".","_").removeprefix("lora_te_") in t1keys:
+										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+											if m+k2 in sd:
+												msd[m+k2]=sd[m+k2]
 
 						if msd=={}:
 							raise ValueError('These weights are not supported.')
@@ -384,7 +435,10 @@ class mokupipe:
 						self.pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd,torch_dtype=self.dtype)
 						self.pipe.fuse_lora(lora_scale= lora_weights[i])
 						self.pipe.unload_lora_weights()
-						del msd,ukeys,t1keys,t2keys
+						if self.is_sdxl:
+							del msd,ukeys,t1keys,t2keys
+						else:
+							del msd,ukeys,t1keys
 					else:
 						MODULE_type=None
 						for m in MODULE_LIST:
