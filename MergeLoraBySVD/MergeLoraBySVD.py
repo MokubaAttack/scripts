@@ -241,8 +241,9 @@ def merge_lora_models(models, ratios, lbws, new_rank, new_conv_rank, device, mer
 	i=0
 	for lora in models:
 		sd=load_file(lora)
-		
-		for k in sd:
+
+		kk=list(sd)
+		for k in kk:
 			if not(k.endswith(".lora_down.weight")):
 				if k in ok:
 					del sd[k]
