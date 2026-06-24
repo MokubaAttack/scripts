@@ -30,9 +30,7 @@ def plus_meta(vs,img):
 		if "cl" in vs:
 			if vs["cl"]!="":
 				metadata=metadata+"Clip skip: "+vs["cl"]+", "
-		if "pag" in vs:
-			if vs["pag"]!="":
-				metadata=metadata+"PAG scale: "+vs["pag"]+", "
+
 		if "ds" in vs:		
 			if vs["ds"]!="":
 				metadata=metadata+"Denoising strength: "+vs["ds"]+", "

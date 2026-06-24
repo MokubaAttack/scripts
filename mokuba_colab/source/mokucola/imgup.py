@@ -115,5 +115,5 @@ class imgup:
 			else:
 				image0=input_image.resize((x,y))
 		else:
-			image0=image.resize((x,y), resample=self.model)
+			image0=img.resize((x,y), resample=self.model)
 		return image0

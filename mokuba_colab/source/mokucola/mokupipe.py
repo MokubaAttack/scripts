@@ -1,12 +1,12 @@
 from diffusers import (
 	AutoencoderKL,
 	ControlNetModel,
-	StableDiffusionXLPAGPipeline,
-	StableDiffusionXLPAGImg2ImgPipeline,
-	StableDiffusionPAGPipeline,
-	StableDiffusionPAGImg2ImgPipeline,
-	StableDiffusionXLControlNetPAGImg2ImgPipeline,
-	StableDiffusionControlNetPAGInpaintPipeline,
+	StableDiffusionXLPipeline,
+	StableDiffusionXLImg2ImgPipeline,
+	StableDiffusionPipeline,
+	StableDiffusionImg2ImgPipeline,
+	StableDiffusionXLControlNetImg2ImgPipeline,
+	StableDiffusionControlNetImg2ImgPipeline,
 	EulerDiscreteScheduler,
 	EulerAncestralDiscreteScheduler,
 	LMSDiscreteScheduler,
@@ -34,6 +34,11 @@ from IPython.display import clear_output
 from compel import (
 	CompelForSD,
 	CompelForSDXL
+)
+from optimum.quanto import (
+	freeze,
+	qfloat8,
+	quantize
 )
 from lycoris import create_lycoris_from_weights
 from lycoris.modules.locon import LoConModule
@@ -158,6 +163,7 @@ class mokupipe:
 
 		self.dtype=torch.float16
 		self.dev="cuda"
+		self.lowmem=False
 
 	def mkpipe(
 		self,
@@ -187,18 +193,24 @@ class mokupipe:
 		self.is_sdxl="conditioner.embedders.1.model.transformer.resblocks.9.mlp.c_proj.weight" in sd
 
 		if self.is_sdxl:
-			self.pipe=StableDiffusionXLPAGPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
+			self.pipe=StableDiffusionXLPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
 			print(self.meta_dict["ckpt_name"]+" is loaded.")
 			if os.path.isfile(vae_safe):
 				self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=self.dtype)
 				print(self.meta_dict["vae_name"]+" is loaded.")
 		else:
-			self.pipe=StableDiffusionPAGPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
+			self.pipe=StableDiffusionPipeline.from_single_file(base_safe,torch_dtype=self.dtype)
 			print(self.meta_dict["ckpt_name"]+" is loaded.")
 			if os.path.isfile(vae_safe):
 				self.pipe.vae=AutoencoderKL.from_single_file(vae_safe,torch_dtype=self.dtype)
 				print(self.meta_dict["vae_name"]+" is loaded.")
-		self.pipe.to(self.dev)
+		if self.lowmem:
+			self.pipe.vae.tile_sample_min_size=256
+			sample_size=256
+			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
+			self.pipe.enable_model_cpu_offload()
+		else:
+			self.pipe.to(self.dev)
 
 		self.meta_dict["sa"]=""
 		sgm_dict={}
@@ -545,6 +557,10 @@ class mokupipe:
 		del meta_embed_list
 		self.meta_dict["pos"]=pos_emb
 		self.meta_dict["neg"]=neg_emb
+
+		if lowmem:
+			quantize(pipe.unet, weights=qfloat8)
+			freeze(pipe.unet)
 		
 		return 1
 
@@ -574,7 +590,7 @@ class mokupipe:
 		self.url=url
 		self.si=si
 
-	def set_diffparams(self,dtype="f16",dev="cuda"):
+	def set_diffparams(self,dtype="f16",dev="cuda",lowmem=False):
 		if dtype=="f32":
 			self.dtype=torch.float32
 		elif dtype=="bf16":
@@ -582,16 +598,23 @@ class mokupipe:
 		else:
 			self.dtype=torch.float16
 		self.dev=dev
+		self.lowmem=lowmem
 
-	def text2image(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,out):
+	def text2image(self,prompt,n_prompt,gs,step,cs,seed,x,y,out):
 		if self.pipe==None:
 			print("You must make a pipeline.")
 			return []
 		if self.is_sdxl:
-			self.pipe=StableDiffusionXLPAGPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+			self.pipe=StableDiffusionXLPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
 		else:
-			self.pipe=StableDiffusionPAGPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
-		self.pipe.to(self.dev)
+			self.pipe=StableDiffusionPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+		if self.lowmem:
+			self.pipe.vae.tile_sample_min_size=256
+			sample_size=256
+			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
+			self.pipe.enable_model_cpu_offload()
+		else:
+			self.pipe.to(self.dev)
 			
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
@@ -622,8 +645,7 @@ class mokupipe:
 		self.meta_dict["cf"]=str(gs)
 		memo=memo+"clip_skip : "+str(cs)+"\n"
 		self.meta_dict["cl"]=str(cs)
-		memo=memo+"pag_scale : "+str(pag)+"\n"
-		self.meta_dict["pag"]=str(pag)
+
 		memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
 		for k in ["hs","ds","hu","hum","up","ccs","cont","tu","tum"]:
 			if k in self.meta_dict:
@@ -662,7 +684,6 @@ class mokupipe:
 					num_inference_steps=step,
 					clip_skip=cs,
 					generator=torch.manual_seed(i),
-					pag_scale=pag
 				).images[0]
 			else:
 				image = self.pipe(
@@ -675,7 +696,6 @@ class mokupipe:
 					num_inference_steps=step,
 					clip_skip=cs,
 					generator=torch.manual_seed(i),
-					pag_scale=pag
 				).images[0]
 			if out:
 				self.meta_dict["se"]=str(i)
@@ -694,15 +714,25 @@ class mokupipe:
 
 		return images
 
-	def image2imageup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,out):
+	def image2imageup(self,prompt,n_prompt,gs,step,cs,seed,x,y,ss,images,out):
 		if self.pipe==None:
 			print("You must make a pipeline.")
 			return []
 		if self.is_sdxl:
-			self.pipe=StableDiffusionXLPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+			self.pipe=StableDiffusionXLImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
 		else:
-			self.pipe=StableDiffusionPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
-		self.pipe.to(self.dev)
+			self.pipe=StableDiffusionImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype)
+		if self.lowmem:
+			self.pipe.vae.tile_sample_min_size=512
+			sample_size=512
+			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
+		if self.lowmem:
+			self.pipe.vae.tile_sample_min_size=256
+			sample_size=256
+			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
+			self.pipe.enable_model_cpu_offload()
+		else:
+			self.pipe.to(self.dev)
 
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
@@ -736,8 +766,7 @@ class mokupipe:
 		self.meta_dict["cf"]=str(gs)
 		memo=memo+"clip_skip : "+str(cs)+"\n"
 		self.meta_dict["cl"]=str(cs)
-		memo=memo+"pag_scale : "+str(pag)+"\n"
-		self.meta_dict["pag"]=str(pag)
+
 		memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
 		for k in ["hs","ds","hu","hum","up","ccs","cont","tu","tum"]:
 			if k in self.meta_dict:
@@ -786,6 +815,7 @@ class mokupipe:
 						u_list.append(1)
 						checklist.append(False)
 
+		del self.upscaler.model
 		j=0
 		for i in seed:
 			j=j+1
@@ -819,7 +849,6 @@ class mokupipe:
 					clip_skip=cs,
 					generator=torch.manual_seed(i),
 					strength=ss,
-					pag_scale=pag
 				).images[0]
 			else:
 				image = self.pipe(
@@ -832,7 +861,6 @@ class mokupipe:
 					clip_skip=cs,
 					generator=torch.manual_seed(i),
 					strength=ss,
-					pag_scale=pag
 				).images[0]
 			if out:
 				self.meta_dict["se"]=str(i)
@@ -851,7 +879,7 @@ class mokupipe:
 
 		return images
 
-	def tileup(self,prompt,n_prompt,gs,step,cs,seed,pag,x,y,ss,images,ccs=None,tile_size=(0,0),ol=0,out=True):
+	def tileup(self,prompt,n_prompt,gs,step,cs,seed,x,y,ss,images,ccs=None,tile_size=(0,0),ol=0,out=True):
 		if self.pipe==None:
 			print("You must make a pipeline.")
 			return []
@@ -884,14 +912,21 @@ class mokupipe:
 		else:
 			if self.is_sdxl:
 				controlnet = ControlNetModel.from_pretrained("OzzyGT/SDXL_Controlnet_Tile_Realistic",torch_dtype=self.dtype,variant="fp16")
-				self.pipe=StableDiffusionXLControlNetPAGImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
+				self.pipe=StableDiffusionXLControlNetImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
 				self.meta_dict["cont"]=str(370104)
 			else:
 				controlnet = ControlNetModel.from_pretrained('lllyasviel/control_v11f1e_sd15_tile',torch_dtype=self.dtype)
-				self.pipe=StableDiffusionControlNetPAGInpaintPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
+				self.pipe=StableDiffusionControlNetImg2ImgPipeline.from_pipe(self.pipe,torch_dtype=self.dtype,controlnet=controlnet)
 				self.meta_dict["cont"]=str(67566)
 			self.meta_dict["ccs"]=str(ccs)
-		self.pipe.to(self.dev)
+		if self.lowmem:
+			self.pipe.vae.tile_sample_min_size=256
+			sample_size=256
+			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
+			self.pipe.enable_model_cpu_offload()
+		else:
+			self.pipe.to(self.dev)
+			
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
 		self.meta_dict["pr"]=prompt
@@ -922,8 +957,7 @@ class mokupipe:
 		self.meta_dict["cf"]=str(gs)
 		memo=memo+"clip_skip : "+str(cs)+"\n"
 		self.meta_dict["cl"]=str(cs)
-		memo=memo+"pag_scale : "+str(pag)+"\n"
-		self.meta_dict["pag"]=str(pag)
+
 		memo=memo+"prompt\n"+prompt+"\nnegative prompt\n"+n_prompt+"\n"
 		for k in ["hs","ds","hu","hum","up","tu","tum"]:
 			if k in self.meta_dict:
@@ -974,6 +1008,7 @@ class mokupipe:
 					else:
 						u_list.append(1)
 
+		del self.upscaler.model
 		j=0
 		for i in seed:
 			j=j+1
@@ -1039,7 +1074,6 @@ class mokupipe:
 								num_inference_steps=int(step/ss)+1,
 								clip_skip=cs,
 								strength=ss,
-								pag_scale=pag
 							).images[0]
 						else:
 							result_tile = self.pipe(
@@ -1052,7 +1086,6 @@ class mokupipe:
 								num_inference_steps=int(step/ss)+1,
 								clip_skip=cs,
 								strength=ss,
-								pag_scale=pag
 							).images[0]
 					else:
 						if self.is_sdxl:
@@ -1070,7 +1103,6 @@ class mokupipe:
 								clip_skip=cs,
 								strength=ss,
 								controlnet_conditioning_scale=ccs,
-								pag_scale=pag
 							).images[0]
 						else:
 							result_tile = self.pipe(
@@ -1085,8 +1117,6 @@ class mokupipe:
 								clip_skip=cs,
 								strength=ss,
 								controlnet_conditioning_scale=ccs,
-								pag_scale=pag,
-								mask_image=Image.new("RGB", current_tile_size, (255,255,255))
 							).images[0]
 
 					if current_tile_size!=(result_tile.width,result_tile.height):
