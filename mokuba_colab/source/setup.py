@@ -25,5 +25,6 @@ setup(
 		"piexif",
 		"lycoris-lora",
 		"transformers==5.5.4",
+		"optimum-quanto",
 	],
 )
