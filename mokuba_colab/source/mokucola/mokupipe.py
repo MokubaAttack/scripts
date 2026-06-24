@@ -559,8 +559,8 @@ class mokupipe:
 		self.meta_dict["neg"]=neg_emb
 
 		if self.lowmem:
-			quantize(pipe.unet, weights=qfloat8)
-			freeze(pipe.unet)
+			quantize(self.pipe.unet, weights=qfloat8)
+			freeze(self.pipe.unet)
 		
 		return 1
 
