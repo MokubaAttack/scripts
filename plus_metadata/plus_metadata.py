@@ -7,7 +7,7 @@ import piexif
 import piexif.helper
 
 keys=[
-	"input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds","pag","sc","tu","tum","up","cont","ccs"
+	"input","pr","ne","st","sa","cf","se","cl","ckpt","lora1","lora2","lora3","lora4","embed1","embed2","embed3","embed4","w1","w2","w3","w4","vae","hu","hs","hum","ds","sc","tu","tum","up","cont","ccs"
 ]
 
 def plus(vs,win=None):
@@ -28,7 +28,6 @@ def plus(vs,win=None):
 	hs=vs["hs"]
 	hum=vs["hum"]
 	ds=vs["ds"]
-	pag=vs["pag"]
 	ckpt=vs["ckpt"]
 	vae=vs["vae"]
 	tu=vs["tu"]
@@ -76,8 +75,7 @@ def plus(vs,win=None):
 			metadata=metadata+"Hires steps: "+hs+", "
 		if hum!="":
 			metadata=metadata+"Hires upscaler: "+hum+", "
-		if pag!="":
-			metadata=metadata+"PAG scale: "+pag+", "
+
 		if tu!="":
 			metadata=metadata+"Tile scale: "+tu+", "
 		if tum!="":
@@ -242,6 +240,9 @@ def load_data(win):
 
 def read_meta(path,win):
 	win["info"].print("read "+path, end="\n")
+	for l in keys:
+		if l!="input":
+			win[l].update("")
 	try:
 		img=Image.open(path)
 		if path.endswith(".jpg"):
@@ -273,7 +274,6 @@ def read_meta(path,win):
 			"CFG scale:":"cf",
 			"Seed:":"se",
 			"Clip skip:":"cl",
-			"PAG scale:":"pag",
 			"Denoising strength:":"ds",
 			"Hires upscale:":"hu",
 			"Hires steps:":"hs",
@@ -389,7 +389,6 @@ if __name__=="__main__":
 	ivs["hs"]=""
 	ivs["hum"]=""
 	ivs["ds"]=""
-	ivs["pag"]=""
 	ivs["tu"]=""
 	ivs["tum"]=""
 	ivs["ccs"]=""
@@ -438,7 +437,6 @@ if __name__=="__main__":
 		[sg.Text("CFG scale"), sg.Input(ivs["cf"],key="cf",right_click_menu=grp_rclick_menu["cf"], size=(10, 1))],
 		[sg.Text("Seed"), sg.Input(ivs["se"],key="se",right_click_menu=grp_rclick_menu["se"], size=(20, 1))],
 		[sg.Text("Clip skip"), sg.Input(ivs["cl"],key="cl",right_click_menu=grp_rclick_menu["cl"], size=(10, 1))],
-		[sg.Text("PAG scale"), sg.Input(ivs["pag"],key="pag",right_click_menu=grp_rclick_menu["pag"], size=(10, 1))],
 	]
 	col4=[
 		[sg.Text("Denoising strength"), sg.Input(ivs["ds"],key="ds",right_click_menu=grp_rclick_menu["ds"], size=(10, 1))],
