@@ -208,9 +208,7 @@ class mokupipe:
 			self.pipe.vae.tile_sample_min_size=256
 			sample_size=256
 			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
-			self.pipe.enable_model_cpu_offload()
-		else:
-			self.pipe.to(self.dev)
+		self.pipe.to(self.dev)
 
 		self.meta_dict["sa"]=""
 		sgm_dict={}
@@ -612,9 +610,7 @@ class mokupipe:
 			self.pipe.vae.tile_sample_min_size=256
 			sample_size=256
 			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
-			self.pipe.enable_model_cpu_offload()
-		else:
-			self.pipe.to(self.dev)
+		self.pipe.to(self.dev)
 			
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
@@ -730,9 +726,7 @@ class mokupipe:
 			self.pipe.vae.tile_sample_min_size=256
 			sample_size=256
 			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
-			self.pipe.enable_model_cpu_offload()
-		else:
-			self.pipe.to(self.dev)
+		self.pipe.to(self.dev)
 
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
@@ -923,9 +917,7 @@ class mokupipe:
 			self.pipe.vae.tile_sample_min_size=256
 			sample_size=256
 			self.pipe.vae.tile_latent_min_size = int(sample_size / (2 ** (len(self.pipe.vae.config.block_out_channels) - 1)))
-			self.pipe.enable_model_cpu_offload()
-		else:
-			self.pipe.to(self.dev)
+		self.pipe.to(self.dev)
 			
 		prompt=prompt+self.prompt_a
 		n_prompt=n_prompt+self.n_prompt_a
