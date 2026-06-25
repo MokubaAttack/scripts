@@ -69,7 +69,6 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - neg_emb : str list ( default : [] ) It is the negative embedding file list.
 - base_safe : str ( default : "base.safetensors" ) It is the checkpoint file.
 - vae_safe : str ( default : "vae.safetensors" ) It is the vae file. If you select the file that doesn't exist, Normal Vae is used.
-- pag : float ( default : 3.0 ) It is pag_scale ( a parameter of PAG ).
 - url : str ( default : "" ) If you input the webhook url of discord, images are sent to discord.
 - p : mokupipe object ( default : None ) If you input the return of this module, you can use same pipeline without making the pipeline.
 - dtype : str ( default : "f16" ) It is the calculation accuracy. Choices are f16, f32 and bf16.
@@ -77,6 +76,7 @@ loras, lora_weights, prompt, n_prompt, t, prog_ver, pic_number, gs, f_step, step
 - ser : str ( default : "colab" ) In google colab, please input "colab". In kaggle, please input "kaggle".
 - del_pipe : bool ( default : True ) If you choice True, the mokupipe object is deleted and None is returned.
 - si : bool ( default : True ) If you choice True, output images are shown in the output window.
+- lowmem : bool ( default : False ) If you choice True, this program is run by low memory mode.
 - return : mokupipe object 
   
 Image files are output by naming (index)_(the seed).png in the output folder path. 
