@@ -463,31 +463,70 @@ class mokupipe:
 						if MODULE_type==None:
 							raise ValueError('These weights are not supported.')
 						key_name=[]
-						head=None
 						for k in sd:
 							for k2 in MODULE_type.weight_list_det:
 								if k.endswith("."+k2):
 									key_name.append(k.removesuffix("."+k2))
-							if head==None and len(key_name)>0:
-								if ("input_blocks" in key_name[-1]):
-									head=key_name[-1].index("input_blocks")
-								elif ("down_blocks" in key_name[-1]):
-									head=key_name[-1].index("down_blocks")
 
-						msd={}
-						if head!=None:
-							for k in key_name:
-								m=k[head:].replace(".","_")
+						usd={}
+						t1sd={}
+						t2sd={}
+						tsd={}
+
+						for k in key_name:
+							m=k.replace(".","_")
+							if k.startswith("lora_unet_"):
+								m=m.removeprefix("lora_unet_")
+								if self.is_sdxl:
+									unet_keys=sdxl_unet_keys
+								else:
+									unet_keys=sd_unet_keys
 								for k2 in unet_keys:
 									if k2 in m:
 										m=m.replace(k2,unet_keys[k2])
 								for k2 in MODULE_type.weight_list:
 									if k+"."+k2 in sd:
-										msd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+										usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+							elif k.startswith("lora_te1_"):
+								m=m.removeprefix("lora_te1_")
+								for k2 in MODULE_type.weight_list:
+									if k+"."+k2 in sd:
+										t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+							elif k.startswith("lora_te2_"):
+								m=m.removeprefix("lora_te2_")
+								for k2 in MODULE_type.weight_list:
+									if k+"."+k2 in sd:
+										t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+							elif k.startswith("lora_te_"):
+								m=m.removeprefix("lora_te_")
+								for k2 in MODULE_type.weight_list:
+									if k+"."+k2 in sd:
+										tsd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
 
-						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.unet, weights_sd=msd)
-						wrapper.merge_to()
-						del msd
+						if self.is_sdxl and usd=={} and t1sd=={} and t2sd=={}:
+							raise ValueError('These weights are not supported.')
+						elif self.is_sdxl==False and usd=={} and tsd=={}:
+							raise ValueError('These weights are not supported.')
+
+						if usd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.unet, weights_sd=usd)
+							wrapper.merge_to()
+						del usd
+
+						if self.is_sdxl and t1sd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=t1sd)
+							wrapper.merge_to()
+						del t1sd
+
+						if self.is_sdxl and t2sd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder_2, weights_sd=t2sd)
+							wrapper.merge_to()
+						del t2sd
+
+						if self.is_sdxl==False and tsd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=tsd)
+							wrapper.merge_to()
+						del tsd
 
 					print(line+".safetensors is loaded.")
 
