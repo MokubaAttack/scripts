@@ -309,7 +309,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 								win['RUN'].Update(disabled=False)
 								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
 							return
-						pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd,torch_dtype=dtype)
+						pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd)
 						if lora1w=="":
 							lora1w=1.0
 						else:
@@ -340,34 +340,46 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
 							return
 						key_name=[]
-						head=None
 						for k in sd:
 							for k2 in MODULE_type.weight_list_det:
 								if k.endswith("."+k2):
 									key_name.append(k.removesuffix("."+k2))
-							if head==None and len(key_name)>0:
-								if ("input_blocks" in key_name[-1]):
-									head=key_name[-1].index("input_blocks")
-								elif ("down_blocks" in key_name[-1]):
-									head=key_name[-1].index("down_blocks")
 
-						msd={}
-						if head!=None:
-							for k in key_name:
-								m=k[head:].replace(".","_")
+						usd={}
+						t1sd={}
+						t2sd={}
+						for k in key_name:
+							m=k.replace(".","_")
+							if k.startswith("lora_unet_"):
+								m=m.removeprefix("lora_unet_")
+								if self.is_sdxl:
+									unet_keys=sdxl_unet_keys
+								else:
+									unet_keys=sd_unet_keys
 								for k2 in unet_keys:
 									if k2 in m:
 										m=m.replace(k2,unet_keys[k2])
 								for k2 in MODULE_type.weight_list:
 									if k+"."+k2 in sd:
-										msd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-						else:
+										usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+							elif k.startswith("lora_te1_"):
+								m=m.removeprefix("lora_te1_")
+								for k2 in MODULE_type.weight_list:
+									if k+"."+k2 in sd:
+										t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+							elif k.startswith("lora_te2_"):
+								m=m.removeprefix("lora_te2_")
+								for k2 in MODULE_type.weight_list:
+									if k+"."+k2 in sd:
+										t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						if usd=={} and t1sd=={} and t2sd=={}:
 							if win==None:
 								print("error : the lora"+str(n+1)+" file isn't supported.")
 							else:
 								win['RUN'].Update(disabled=False)
 								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
 							return
+						del sd
 
 						if lora1w=="":
 							lora1w=1.0
@@ -377,9 +389,20 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 							except:
 								lora1w=1.0
 
-						wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.unet, weights_sd=msd)
-						wrapper.merge_to()
-						del msd,sd
+						if usd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.unet, weights_sd=usd)
+							wrapper.merge_to()
+						del usd
+
+						if t1sd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder, weights_sd=t1sd)
+							wrapper.merge_to()
+						del t1sd
+
+						if t2sd!={}:
+							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder_2, weights_sd=t2sd)
+							wrapper.merge_to()
+						del t2sd
 				else:
 					if win==None:
 						print("error : the lora"+str(n+1)+" file doesn't exist.")
@@ -491,6 +514,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 		else:
 			win['RUN'].Update(disabled=False)
 			win["info"].update("error : fail in the output.")
+		return
 
 	try:
 		if os.path.exists(os.getcwd()+"/safe_temp"):
