@@ -478,12 +478,12 @@ class mokupipe:
 							if k.startswith("lora_unet_"):
 								m=m.removeprefix("lora_unet_")
 								if self.is_sdxl:
-									unet_keys=sdxl_unet_keys
+									keys=sdxl_unet_keys
 								else:
-									unet_keys=sd_unet_keys
-								for k2 in unet_keys:
+									keys=sd_unet_keys
+								for k2 in keys:
 									if k2 in m:
-										m=m.replace(k2,unet_keys[k2])
+										m=m.replace(k2,keys[k2])
 								for k2 in MODULE_type.weight_list:
 									if k+"."+k2 in sd:
 										usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
