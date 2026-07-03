@@ -352,10 +352,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 							m=k.replace(".","_")
 							if k.startswith("lora_unet_"):
 								m=m.removeprefix("lora_unet_")
-								if self.is_sdxl:
-									unet_keys=sdxl_unet_keys
-								else:
-									unet_keys=sd_unet_keys
+
 								for k2 in unet_keys:
 									if k2 in m:
 										m=m.replace(k2,unet_keys[k2])
