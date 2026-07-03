@@ -490,7 +490,15 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 					if k2 in k:
 						k=k.replace(k2,vae_keys[k2])
 				k="first_stage_model."+k
-			sd[k]=p.data
+			w=p.data
+			if "mid.attn_1" in k:
+				for k2 in ["q", "k", "v", "proj_out"]:
+					if k.endswith("mid.attn_1."+k2+".weight"):
+						if w.ndim!=1:
+							s=w.shape
+							s=(s[0],s[1])
+							w=torch.reshape(w,s)
+			sd[k]=w
 			
 		for k,p in getattr(pipe, "unet").named_parameters():
 			for k2 in unet_keys1:
