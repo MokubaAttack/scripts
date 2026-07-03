@@ -205,343 +205,348 @@ def save_ckpt(keys,path):
 	output.close()
 	
 def zip_ckpt(ckpt1,ckpt2):
-	keys=[]
-	for k in ckpt1:
+	keys=list(ckpt1)
+	for k in keys:
 		if k in ckpt2 and not("first_stage_model." in k):
 			sum1=torch.sum(torch.abs(ckpt1[k].to(torch.float32))).item()
 			sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
 			n=not(math.isnan(sum1) or math.isnan(sum2))
 			if n and sum1!=sum2:
 				ckpt1[k]=ckpt1[k]*sum2/sum1
+			del ckpt2[k],sum1,sum2,n
 		sd={}
 		sd[k]=ckpt1[k].to(torch.float16)
 		save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
-		keys.append(k)
+		del ckpt1[k],sd
 	return keys
 
 def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=None):
 	if win!=None:
 		win["RUN"].Update(disabled=True)
-	try:
-		if not(os.path.exists(base_safe)):
-			if win==None:
-				print("error : the ckpt file doesn't exist.")
-			else:
-				win['RUN'].Update(disabled=False)
-				win["info"].update("error : the ckpt file doesn't exist.")
-			return
+
+	if not(os.path.exists(base_safe)):
 		if win==None:
-			print("making pipeline")
+			print("error : the ckpt file doesn't exist.")
 		else:
-			win["info"].update("making pipeline")
+			win['RUN'].Update(disabled=False)
+			win["info"].update("error : the ckpt file doesn't exist.")
+		return
+	if win==None:
+		print("making pipeline")
+	else:
+		win["info"].update("making pipeline")
+	try:
 		pipe = StableDiffusionXLPipeline.from_single_file(base_safe, torch_dtype=torch.float32,cache_dir=os.getcwd()+"/pipecache")
-				
-		if vae_safe!="":
-			if os.path.exists(vae_safe):
+	except:
+		if win==None:
+			print("error : the ckpt file is not supported.")
+		else:
+			win['RUN'].Update(disabled=False)
+			win["info"].update("error : the ckpt file is not supported.")
+		return
+			
+	if vae_safe!="":
+		if os.path.exists(vae_safe):
+			try:
 				pipe.vae=AutoencoderKL.from_single_file(vae_safe)
-			else:
+			except:
 				if win==None:
-					print("error : the vae file doesn't exist.")
+					print("error : the vae file is not supported.")
 				else:
 					win['RUN'].Update(disabled=False)
-					win["info"].update("error : the vae file doesn't exist.")
+					win["info"].update("error : the vae file is not supported.")
 				return
-
-		if win==None:
-			print("merging loras")
 		else:
-			win["info"].update("merging loras")
-		paths=[lora1,lora2,lora3]
-		lora_weights=[lora1w,lora2w,lora3w]
-		for n in range(len(paths)):
-			if paths[n]!="":
-				if os.path.exists(paths[n]):
-					sd=load_file(paths[n])
-					lora_check=False
+			if win==None:
+				print("error : the vae file doesn't exist.")
+			else:
+				win['RUN'].Update(disabled=False)
+				win["info"].update("error : the vae file doesn't exist.")
+			return
+
+	if win==None:
+		print("merging loras")
+	else:
+		win["info"].update("merging loras")
+	paths=[lora1,lora2,lora3]
+	lora_weights=[lora1w,lora2w,lora3w]
+	for n in range(len(paths)):
+		if paths[n]!="":
+			if os.path.exists(paths[n]):
+				sd=load_file(paths[n])
+				lora_check=False
+				for k in sd:
+					if k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight"):
+						lora_check=True
+						break
+
+				if lora_check:
+					ukeys=[]
+					for name, module in pipe.unet.named_modules():
+						ukeys.append(name.replace(".","_"))
+					t1keys=[]
+					for name, module in pipe.text_encoder.named_modules():
+						t1keys.append(name.replace(".","_"))
+					t2keys=[]
+					for name, module in pipe.text_encoder_2.named_modules():
+						t2keys.append(name.replace(".","_"))
+
+					msd={}
 					for k in sd:
-						if k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight"):
-							lora_check=True
-							break
-
-					if lora_check:
-						ukeys=[]
-						for name, module in pipe.unet.named_modules():
-							ukeys.append(name.replace(".","_"))
-						t1keys=[]
-						for name, module in pipe.text_encoder.named_modules():
-							t1keys.append(name.replace(".","_"))
-						t2keys=[]
-						for name, module in pipe.text_encoder_2.named_modules():
-							t2keys.append(name.replace(".","_"))
-
-						msd={}
-						for k in sd:
-							if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
-								continue
-							if k.endswith(".lora_up.weight"):
-								m=k.removesuffix(".lora_up.weight")
-							else:
-								m=k.removesuffix(".lora_B.weight")
-							if m.replace(".","_").startswith("lora_unet_"):
-								m2=m.replace(".","_").removeprefix("lora_unet_")
-								for k2 in unet_keys:
-									if k2 in m2:
-										m2=m2.replace(k2,unet_keys[k2])
-								if m2 in ukeys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
-							elif m.replace(".","_").startswith("lora_te1_"):
-								if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
-							elif m.replace(".","_").startswith("lora_te2_"):
-								if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
-									for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-										if m+k2 in sd:
-											msd[m+k2]=sd[m+k2]
-
-						if msd=={}:
-							if win==None:
-								print("error : the lora"+str(n+1)+" file isn't supported.")
-							else:
-								win['RUN'].Update(disabled=False)
-								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
-							return
-						pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd)
-						if lora1w=="":
-							lora1w=1.0
+						if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
+							continue
+						if k.endswith(".lora_up.weight"):
+							m=k.removesuffix(".lora_up.weight")
 						else:
-							try:
-								lora1w=float(lora_weights[n])
-							except:
-								lora1w=1.0
-						pipe.fuse_lora(lora_scale=lora1w)
-						pipe.unload_lora_weights()
-						del msd,ukeys,t1keys,t2keys,sd
+							m=k.removesuffix(".lora_B.weight")
+						if m.replace(".","_").startswith("lora_unet_"):
+							m2=m.replace(".","_").removeprefix("lora_unet_")
+							for k2 in unet_keys:
+								if k2 in m2:
+									m2=m2.replace(k2,unet_keys[k2])
+							if m2 in ukeys:
+								for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+									if m+k2 in sd:
+										msd[m+k2]=sd[m+k2]
+						elif m.replace(".","_").startswith("lora_te1_"):
+							if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
+								for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+									if m+k2 in sd:
+										msd[m+k2]=sd[m+k2]
+						elif m.replace(".","_").startswith("lora_te2_"):
+							if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
+								for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
+									if m+k2 in sd:
+										msd[m+k2]=sd[m+k2]
+
+					if msd=={}:
+						if win==None:
+							print("error : the lora"+str(n+1)+" file isn't supported.")
+						else:
+							win['RUN'].Update(disabled=False)
+							win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
+						return
+					pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd)
+					if lora1w=="":
+						lora1w=1.0
 					else:
-						MODULE_type=None
-						for m in MODULE_LIST:
-							for k in m.weight_list_det:
-								for k2 in sd:
-									if k2.endswith(k):
-										MODULE_type=m
-										break
-								if MODULE_type!=None:
+						try:
+							lora1w=float(lora_weights[n])
+						except:
+							lora1w=1.0
+					pipe.fuse_lora(lora_scale=lora1w)
+					pipe.unload_lora_weights()
+					del msd,ukeys,t1keys,t2keys,sd
+				else:
+					MODULE_type=None
+					for m in MODULE_LIST:
+						for k in m.weight_list_det:
+							for k2 in sd:
+								if k2.endswith(k):
+									MODULE_type=m
 									break
 							if MODULE_type!=None:
 								break
-						if MODULE_type==None:
-							if win==None:
-								print("error : the lora"+str(n+1)+" file isn't supported.")
-							else:
-								win['RUN'].Update(disabled=False)
-								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
-							return
-						key_name=[]
-						for k in sd:
-							for k2 in MODULE_type.weight_list_det:
-								if k.endswith("."+k2):
-									key_name.append(k.removesuffix("."+k2))
-
-						usd={}
-						t1sd={}
-						t2sd={}
-						for k in key_name:
-							m=k.replace(".","_")
-							if k.startswith("lora_unet_"):
-								m=m.removeprefix("lora_unet_")
-
-								for k2 in unet_keys:
-									if k2 in m:
-										m=m.replace(k2,unet_keys[k2])
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-							elif k.startswith("lora_te1_"):
-								m=m.removeprefix("lora_te1_")
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-							elif k.startswith("lora_te2_"):
-								m=m.removeprefix("lora_te2_")
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-						if usd=={} and t1sd=={} and t2sd=={}:
-							if win==None:
-								print("error : the lora"+str(n+1)+" file isn't supported.")
-							else:
-								win['RUN'].Update(disabled=False)
-								win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
-							return
-						del sd
-
-						if lora1w=="":
-							lora1w=1.0
+						if MODULE_type!=None:
+							break
+					if MODULE_type==None:
+						if win==None:
+							print("error : the lora"+str(n+1)+" file isn't supported.")
 						else:
-							try:
-								lora1w=float(lora_weights[n])
-							except:
-								lora1w=1.0
+							win['RUN'].Update(disabled=False)
+							win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
+						return
+					key_name=[]
+					for k in sd:
+						for k2 in MODULE_type.weight_list_det:
+							if k.endswith("."+k2):
+								key_name.append(k.removesuffix("."+k2))
 
-						if usd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.unet, weights_sd=usd)
-							wrapper.merge_to()
-						del usd
+					usd={}
+					t1sd={}
+					t2sd={}
+					for k in key_name:
+						m=k.replace(".","_")
+						if k.startswith("lora_unet_"):
+							m=m.removeprefix("lora_unet_")
 
-						if t1sd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder, weights_sd=t1sd)
-							wrapper.merge_to()
-						del t1sd
+							for k2 in unet_keys:
+								if k2 in m:
+									m=m.replace(k2,unet_keys[k2])
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						elif k.startswith("lora_te1_"):
+							m=m.removeprefix("lora_te1_")
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						elif k.startswith("lora_te2_"):
+							m=m.removeprefix("lora_te2_")
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+					if usd=={} and t1sd=={} and t2sd=={}:
+						if win==None:
+							print("error : the lora"+str(n+1)+" file isn't supported.")
+						else:
+							win['RUN'].Update(disabled=False)
+							win["info"].update("error : the lora"+str(n+1)+" file isn't supported.")
+						return
+					del sd
 
-						if t2sd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder_2, weights_sd=t2sd)
-							wrapper.merge_to()
-						del t2sd
-				else:
-					if win==None:
-						print("error : the lora"+str(n+1)+" file doesn't exist.")
+					if lora1w=="":
+						lora1w=1.0
 					else:
-						win['RUN'].Update(disabled=False)
-						win["info"].update("error : the lora"+str(n+1)+" file doesn't exist.")
-					return
+						try:
+							lora1w=float(lora_weights[n])
+						except:
+							lora1w=1.0
 
-		if win==None:
-			print("making output")
-		else:
-			win["info"].update("making output")
-		sd={}
-		for k,p in getattr(pipe, "text_encoder").named_parameters():
-			sd["conditioner.embedders.0.transformer."+k]=p.data
+					if usd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.unet, weights_sd=usd)
+						wrapper.merge_to()
+					del usd
 
-		sd2={}
-		for k,p in getattr(pipe, "text_encoder_2").named_parameters():
-			k=k.removeprefix("text_model.")
-			if k.startswith("final_layer_norm"):
-				k=k.replace("final_layer_norm","ln_final")
-			elif k.startswith("encoder.layers"):
-				k=k.replace("encoder.layers.","transformer.resblocks.")
-				for k2 in text2_keys:
-					if k2 in k:
-						k=k.replace(k2,text2_keys[k2])
-			if k=="text_projection.weight":
-				k="text_projection"
-			elif k=="embeddings.position_embedding.weight":
-				k="positional_embedding"
-			elif k=="embeddings.token_embedding.weight":
-				k="token_embedding.weight"
-			sd2["conditioner.embedders.1.model."+k]=p.data
-		sd2_keys=list(sd2)
-		for k in sd2_keys:
-			if k.endswith(".out_proj.weight"):
-				sd[k]=sd2.pop(k)
+					if t1sd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder, weights_sd=t1sd)
+						wrapper.merge_to()
+					del t1sd
 
-				k2=k.removesuffix(".out_proj.weight")
-
-				q_weight=sd2.pop(k2+".q_proj.weight")
-				k_weight=sd2.pop(k2+".k_proj.weight")
-				v_weight=sd2.pop(k2+".v_proj.weight")
-				sd[k2+".in_proj_weight"]=torch.cat((q_weight,k_weight,v_weight)).to(torch.float16)
-
-				q_bias=sd2.pop(k2+".q_proj.bias")
-				k_bias=sd2.pop(k2+".k_proj.bias")
-				v_bias=sd2.pop(k2+".v_proj.bias")
-				sd[k2+".in_proj_bias"]=torch.cat((q_bias,k_bias,v_bias)).to(torch.float16)
-			elif k.endswith(".q_proj.weight") or k.endswith(".k_proj.weight") or k.endswith(".v_proj.weight"):
-				pass
-			elif k.endswith(".q_proj.bias") or k.endswith(".k_proj.bias") or k.endswith(".v_proj.bias"):
-				pass
+					if t2sd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora1w,file="dummy.safetensors",module=pipe.text_encoder_2, weights_sd=t2sd)
+						wrapper.merge_to()
+					del t2sd
 			else:
-				sd[k]=sd2.pop(k)
+				if win==None:
+					print("error : the lora"+str(n+1)+" file doesn't exist.")
+				else:
+					win['RUN'].Update(disabled=False)
+					win["info"].update("error : the lora"+str(n+1)+" file doesn't exist.")
+				return
 
-		for k,p in getattr(pipe, "vae").named_parameters():
-			if k.startswith("encoder.down_blocks."):
-				if "downsamplers" in k:
-					m=re.match(r"encoder\.down_blocks\.([0-9]+)\.downsamplers\.([0-9]+)\.(\S+)",k)
-					m1=m.group(1)
-					m3=m.group(3)
-					k="first_stage_model.encoder.down."+m1+".downsample."+m3
-				else:
-					m=re.match(r"encoder\.down_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
-					m1=m.group(1)
-					m2=m.group(2)
-					m3=m.group(3)
-					if "conv_shortcut" in m3:
-						m3=m3.replace("conv_shortcut","nin_shortcut")
-					k="first_stage_model.encoder.down."+m1+".block."+m2+"."+m3
-			elif k.startswith("decoder.up_blocks."):
-				if "upsamplers" in k:
-					m=re.match(r"decoder\.up_blocks\.([0-9]+)\.upsamplers\.([0-9]+)\.(\S+)",k)
-					m1=str(3-int(m.group(1)))
-					m3=m.group(3)
-					k="first_stage_model.decoder.up."+m1+".upsample."+m3
-				else:
-					m=re.match(r"decoder\.up_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
-					m1=str(3-int(m.group(1)))
-					m2=m.group(2)
-					m3=m.group(3)
-					if "conv_shortcut" in m3:
-						m3=m3.replace("conv_shortcut","nin_shortcut")
-					k="first_stage_model.decoder.up."+m1+".block."+m2+"."+m3
-			else:
-				for k2 in vae_keys:
-					if k2 in k:
-						k=k.replace(k2,vae_keys[k2])
-				k="first_stage_model."+k
-			w=p.data
-			if "mid.attn_1" in k:
-				for k2 in ["q", "k", "v", "proj_out"]:
-					if k.endswith("mid.attn_1."+k2+".weight"):
-						if w.ndim!=1:
-							s=w.shape
-							s=(s[0],s[1])
-							w=torch.reshape(w,s)
-			sd[k]=w
-			
-		for k,p in getattr(pipe, "unet").named_parameters():
-			for k2 in unet_keys1:
-				if unet_keys1[k2] in k:
-					k=k.replace(unet_keys1[k2],k2)
-					if k2 in change_keys:
-						for k3 in unet_keys3:
-							if unet_keys3[k3] in k:
-								k=k.replace(unet_keys3[k3],k3)
-			for k2 in unet_keys2:
+	if win==None:
+		print("making output")
+	else:
+		win["info"].update("making output")
+	sd={}
+	for k,p in getattr(pipe, "text_encoder").named_parameters():
+		sd["conditioner.embedders.0.transformer."+k]=p.data.detach()
+	del pipe.text_encoder
+
+	sd2={}
+	for k,p in getattr(pipe, "text_encoder_2").named_parameters():
+		k=k.removeprefix("text_model.")
+		if k.startswith("final_layer_norm"):
+			k=k.replace("final_layer_norm","ln_final")
+		elif k.startswith("encoder.layers"):
+			k=k.replace("encoder.layers.","transformer.resblocks.")
+			for k2 in text2_keys:
 				if k2 in k:
-					k=k.replace(k2,unet_keys2[k2])
-			k="model.diffusion_model."+k
-			sd[k]=p.data
-	except:
-		if win==None:
-			print("error : fail in the output.")
-		else:
-			win['RUN'].Update(disabled=False)
-			win["info"].update("error : fail in the output.")
-		return
+					k=k.replace(k2,text2_keys[k2])
+		if k=="text_projection.weight":
+			k="text_projection"
+		elif k=="embeddings.position_embedding.weight":
+			k="positional_embedding"
+		elif k=="embeddings.token_embedding.weight":
+			k="token_embedding.weight"
+		sd2["conditioner.embedders.1.model."+k]=p.data.detach()
+	del pipe.text_encoder_2
+	sd2_keys=list(sd2)
+	for k in sd2_keys:
+		if k.endswith(".out_proj.weight"):
+			sd[k]=sd2.pop(k)
 
-	try:
-		if os.path.exists(os.getcwd()+"/safe_temp"):
-			shutil.rmtree(os.getcwd()+"/safe_temp")
-		os.mkdir(os.getcwd()+"/safe_temp")
-		sd2=load_file(base_safe)
-		keys=zip_ckpt(sd,sd2)
-		save_ckpt(keys,out_safe)
+			k2=k.removesuffix(".out_proj.weight")
+
+			q_weight=sd2.pop(k2+".q_proj.weight")
+			k_weight=sd2.pop(k2+".k_proj.weight")
+			v_weight=sd2.pop(k2+".v_proj.weight")
+			sd[k2+".in_proj_weight"]=torch.cat((q_weight,k_weight,v_weight)).to(torch.float16)
+
+			q_bias=sd2.pop(k2+".q_proj.bias")
+			k_bias=sd2.pop(k2+".k_proj.bias")
+			v_bias=sd2.pop(k2+".v_proj.bias")
+			sd[k2+".in_proj_bias"]=torch.cat((q_bias,k_bias,v_bias)).to(torch.float16)
+		elif k.endswith(".q_proj.weight") or k.endswith(".k_proj.weight") or k.endswith(".v_proj.weight"):
+			pass
+		elif k.endswith(".q_proj.bias") or k.endswith(".k_proj.bias") or k.endswith(".v_proj.bias"):
+			pass
+		else:
+			sd[k]=sd2.pop(k)
+
+	for k,p in getattr(pipe, "vae").named_parameters():
+		if k.startswith("encoder.down_blocks."):
+			if "downsamplers" in k:
+				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.downsamplers\.([0-9]+)\.(\S+)",k)
+				m1=m.group(1)
+				m3=m.group(3)
+				k="first_stage_model.encoder.down."+m1+".downsample."+m3
+			else:
+				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
+				m1=m.group(1)
+				m2=m.group(2)
+				m3=m.group(3)
+				if "conv_shortcut" in m3:
+					m3=m3.replace("conv_shortcut","nin_shortcut")
+				k="first_stage_model.encoder.down."+m1+".block."+m2+"."+m3
+		elif k.startswith("decoder.up_blocks."):
+			if "upsamplers" in k:
+				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.upsamplers\.([0-9]+)\.(\S+)",k)
+				m1=str(3-int(m.group(1)))
+				m3=m.group(3)
+				k="first_stage_model.decoder.up."+m1+".upsample."+m3
+			else:
+				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
+				m1=str(3-int(m.group(1)))
+				m2=m.group(2)
+				m3=m.group(3)
+				if "conv_shortcut" in m3:
+					m3=m3.replace("conv_shortcut","nin_shortcut")
+				k="first_stage_model.decoder.up."+m1+".block."+m2+"."+m3
+		else:
+			for k2 in vae_keys:
+				if k2 in k:
+					k=k.replace(k2,vae_keys[k2])
+			k="first_stage_model."+k
+		w=p.data.detach()
+		if "mid.attn_1" in k:
+			for k2 in ["q", "k", "v", "proj_out"]:
+				if k.endswith("mid.attn_1."+k2+".weight"):
+					if w.ndim!=1:
+						w=w.reshape(*w.shape, 1, 1)
+		sd[k]=w
+	del pipe.vae
 		
+	for k,p in getattr(pipe, "unet").named_parameters():
+		for k2 in unet_keys1:
+			if unet_keys1[k2] in k:
+				k=k.replace(unet_keys1[k2],k2)
+				if k2 in change_keys:
+					for k3 in unet_keys3:
+						if unet_keys3[k3] in k:
+							k=k.replace(unet_keys3[k3],k3)
+		for k2 in unet_keys2:
+			if k2 in k:
+				k=k.replace(k2,unet_keys2[k2])
+		k="model.diffusion_model."+k
+		sd[k]=p.data.detach()
+	del pipe.unet
+	del pipe
+
+	if os.path.exists(os.getcwd()+"/safe_temp"):
 		shutil.rmtree(os.getcwd()+"/safe_temp")
-		if win==None:
-			print("fin : "+out_safe)
-		else:
-			win['RUN'].Update(disabled=False)
-			win["info"].update("fin : "+out_safe)
-	except:
-		shutil.rmtree(os.getcwd()+"/safe_temp")
-		if win==None:
-			print("error : fail in the output.")
-		else:
-			win['RUN'].Update(disabled=False)
-			win["info"].update("error : fail in the output.")
+	os.mkdir(os.getcwd()+"/safe_temp")
+	sd2=load_file(base_safe)
+	keys=zip_ckpt(sd,sd2)
+	save_ckpt(keys,out_safe)
+	
+	shutil.rmtree(os.getcwd()+"/safe_temp")
+	if win==None:
+		print("fin : "+out_safe)
+	else:
+		win['RUN'].Update(disabled=False)
+		win["info"].update("fin : "+out_safe)
 	
 if __name__=="__main__":
 	import FreeSimpleGUI as sg
