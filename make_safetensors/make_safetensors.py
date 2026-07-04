@@ -204,20 +204,206 @@ def save_ckpt(keys,path):
 		os.remove(os.getcwd()+"/safe_temp/"+k+".safetensors")
 	output.close()
 	
-def zip_ckpt(ckpt1,ckpt2):
-	keys=list(ckpt1)
-	for k in keys:
-		if k in ckpt2 and not("first_stage_model." in k):
-			sum1=torch.sum(torch.abs(ckpt1[k].to(torch.float32))).item()
+def zip_ckpt(pipe,ckpt2):
+	keys=[]
+	for k,p in getattr(pipe, "text_encoder").named_parameters():
+		k="conditioner.embedders.0.transformer."+k
+		
+		t=p.data.to(torch.float32)
+		if k in ckpt2:
+			sum1=torch.sum(torch.abs(t)).item()
 			sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
 			n=not(math.isnan(sum1) or math.isnan(sum2))
 			if n and sum1!=sum2:
-				ckpt1[k]=ckpt1[k]*sum2/sum1
-			del ckpt2[k],sum1,sum2,n
+				t=t*sum2/sum1
+			del ckpt2[k]
 		sd={}
-		sd[k]=ckpt1[k].to(torch.float16)
+		sd[k]=t.to(torch.float16)
 		save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
-		del ckpt1[k],sd
+		keys.append(k)
+	del sd
+	del pipe.text_encoder
+
+	sd2={}
+	for k,p in getattr(pipe, "text_encoder_2").named_parameters():
+		k=k.removeprefix("text_model.")
+		if k.startswith("final_layer_norm"):
+			k=k.replace("final_layer_norm","ln_final")
+		elif k.startswith("encoder.layers"):
+			k=k.replace("encoder.layers.","transformer.resblocks.")
+			for k2 in text2_keys:
+				if k2 in k:
+					k=k.replace(k2,text2_keys[k2])
+		if k=="text_projection.weight":
+			k="text_projection"
+		elif k=="embeddings.position_embedding.weight":
+			k="positional_embedding"
+		elif k=="embeddings.token_embedding.weight":
+			k="token_embedding.weight"
+		k="conditioner.embedders.1.model."+k
+
+		sd2[k]=p.data
+		
+	sd2_keys=list(sd2)
+	for k in sd2_keys:
+		if k.endswith(".out_proj.weight"):
+			sd={}
+			sd[k]=sd2.pop(k)
+			t=sd[k].to(torch.float32)
+			if k in ckpt2:
+				sum1=torch.sum(torch.abs(t)).item()
+				sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
+				n=not(math.isnan(sum1) or math.isnan(sum2))
+				if n and sum1!=sum2:
+					t=t*sum2/sum1
+				del ckpt2[k]
+			sd[k]=t.to(torch.float16)
+			save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
+			keys.append(k)
+
+			k2=k.removesuffix(".out_proj.weight")
+
+			q_weight=sd2.pop(k2+".q_proj.weight")
+			k_weight=sd2.pop(k2+".k_proj.weight")
+			v_weight=sd2.pop(k2+".v_proj.weight")
+			k3=k2+".in_proj_weight"
+			sd={}
+			sd[k3]=torch.cat((q_weight,k_weight,v_weight)).to(torch.float32)
+			t=sd[k3]
+			if k3 in ckpt2:
+				sum1=torch.sum(torch.abs(t)).item()
+				sum2=torch.sum(torch.abs(ckpt2[k3].to(torch.float32))).item()
+				n=not(math.isnan(sum1) or math.isnan(sum2))
+				if n and sum1!=sum2:
+					t=t*sum2/sum1
+				del ckpt2[k3]
+			sd[k3]=t.to(torch.float16)
+			save_file(sd,os.getcwd()+"/safe_temp/"+k3+".safetensors")
+			keys.append(k3)
+
+			q_bias=sd2.pop(k2+".q_proj.bias")
+			k_bias=sd2.pop(k2+".k_proj.bias")
+			v_bias=sd2.pop(k2+".v_proj.bias")
+			k3=k2+".in_proj_bias"
+			sd={}
+			sd[k3]=torch.cat((q_bias,k_bias,v_bias)).to(torch.float32)
+			t=sd[k3]
+			if k3 in ckpt2:
+				sum1=torch.sum(torch.abs(t)).item()
+				sum2=torch.sum(torch.abs(ckpt2[k3].to(torch.float32))).item()
+				n=not(math.isnan(sum1) or math.isnan(sum2))
+				if n and sum1!=sum2:
+					t=t*sum2/sum1
+				del ckpt2[k3]
+			sd[k3]=t.to(torch.float16)
+			save_file(sd,os.getcwd()+"/safe_temp/"+k3+".safetensors")
+			keys.append(k3)
+			
+		elif k.endswith(".q_proj.weight") or k.endswith(".k_proj.weight") or k.endswith(".v_proj.weight"):
+			pass
+		elif k.endswith(".q_proj.bias") or k.endswith(".k_proj.bias") or k.endswith(".v_proj.bias"):
+			pass
+		else:
+			sd={}
+			sd[k]=sd2.pop(k)
+			t=sd[k].to(torch.float32)
+			if k in ckpt2:
+				sum1=torch.sum(torch.abs(t)).item()
+				sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
+				n=not(math.isnan(sum1) or math.isnan(sum2))
+				if n and sum1!=sum2:
+					t=t*sum2/sum1
+				del ckpt2[k]
+			sd[k]=t.to(torch.float16)
+			save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
+			keys.append(k)
+	del sd,sd2
+	del pipe.text_encoder_2
+
+	for k,p in getattr(pipe, "vae").named_parameters():
+		if k.startswith("encoder.down_blocks."):
+			if "downsamplers" in k:
+				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.downsamplers\.([0-9]+)\.(\S+)",k)
+				m1=m.group(1)
+				m3=m.group(3)
+				k="first_stage_model.encoder.down."+m1+".downsample."+m3
+			else:
+				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
+				m1=m.group(1)
+				m2=m.group(2)
+				m3=m.group(3)
+				if "conv_shortcut" in m3:
+					m3=m3.replace("conv_shortcut","nin_shortcut")
+				k="first_stage_model.encoder.down."+m1+".block."+m2+"."+m3
+		elif k.startswith("decoder.up_blocks."):
+			if "upsamplers" in k:
+				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.upsamplers\.([0-9]+)\.(\S+)",k)
+				m1=str(3-int(m.group(1)))
+				m3=m.group(3)
+				k="first_stage_model.decoder.up."+m1+".upsample."+m3
+			else:
+				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
+				m1=str(3-int(m.group(1)))
+				m2=m.group(2)
+				m3=m.group(3)
+				if "conv_shortcut" in m3:
+					m3=m3.replace("conv_shortcut","nin_shortcut")
+				k="first_stage_model.decoder.up."+m1+".block."+m2+"."+m3
+		else:
+			for k2 in vae_keys:
+				if k2 in k:
+					k=k.replace(k2,vae_keys[k2])
+			k="first_stage_model."+k
+			
+		t=p.data.to(torch.float32)
+		if "mid.attn_1" in k:
+			for k2 in ["q", "k", "v", "proj_out"]:
+				if k.endswith("mid.attn_1."+k2+".weight"):
+					if t.ndim!=1:
+						t=t.reshape(*t.shape, 1, 1)
+		if k in ckpt2:
+			sum1=torch.sum(torch.abs(t)).item()
+			sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
+			n=not(math.isnan(sum1) or math.isnan(sum2))
+			if n and sum1!=sum2:
+				t=t*sum2/sum1
+			del ckpt2[k]
+		sd={}
+		sd[k]=t.to(torch.float16)
+		save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
+		keys.append(k)
+	del sd
+	del pipe.vae
+		
+	for k,p in getattr(pipe, "unet").named_parameters():
+		for k2 in unet_keys1:
+			if unet_keys1[k2] in k:
+				k=k.replace(unet_keys1[k2],k2)
+				if k2 in change_keys:
+					for k3 in unet_keys3:
+						if unet_keys3[k3] in k:
+							k=k.replace(unet_keys3[k3],k3)
+		for k2 in unet_keys2:
+			if k2 in k:
+				k=k.replace(k2,unet_keys2[k2])
+		k="model.diffusion_model."+k
+		
+		t=p.data.to(torch.float32)
+		if k in ckpt2:
+			sum1=torch.sum(torch.abs(t)).item()
+			sum2=torch.sum(torch.abs(ckpt2[k].to(torch.float32))).item()
+			n=not(math.isnan(sum1) or math.isnan(sum2))
+			if n and sum1!=sum2:
+				t=t*sum2/sum1
+			del ckpt2[k]
+		sd={}
+		sd[k]=t.to(torch.float16)
+		save_file(sd,os.getcwd()+"/safe_temp/"+k+".safetensors")
+		keys.append(k)
+	del sd
+	del pipe.unet
+	del pipe
+
 	return keys
 
 def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=None):
@@ -429,116 +615,12 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 		print("making output")
 	else:
 		win["info"].update("making output")
-	sd={}
-	for k,p in getattr(pipe, "text_encoder").named_parameters():
-		sd["conditioner.embedders.0.transformer."+k]=p.data.detach()
-	del pipe.text_encoder
-
-	sd2={}
-	for k,p in getattr(pipe, "text_encoder_2").named_parameters():
-		k=k.removeprefix("text_model.")
-		if k.startswith("final_layer_norm"):
-			k=k.replace("final_layer_norm","ln_final")
-		elif k.startswith("encoder.layers"):
-			k=k.replace("encoder.layers.","transformer.resblocks.")
-			for k2 in text2_keys:
-				if k2 in k:
-					k=k.replace(k2,text2_keys[k2])
-		if k=="text_projection.weight":
-			k="text_projection"
-		elif k=="embeddings.position_embedding.weight":
-			k="positional_embedding"
-		elif k=="embeddings.token_embedding.weight":
-			k="token_embedding.weight"
-		sd2["conditioner.embedders.1.model."+k]=p.data.detach()
-	del pipe.text_encoder_2
-	sd2_keys=list(sd2)
-	for k in sd2_keys:
-		if k.endswith(".out_proj.weight"):
-			sd[k]=sd2.pop(k)
-
-			k2=k.removesuffix(".out_proj.weight")
-
-			q_weight=sd2.pop(k2+".q_proj.weight")
-			k_weight=sd2.pop(k2+".k_proj.weight")
-			v_weight=sd2.pop(k2+".v_proj.weight")
-			sd[k2+".in_proj_weight"]=torch.cat((q_weight,k_weight,v_weight)).to(torch.float16)
-
-			q_bias=sd2.pop(k2+".q_proj.bias")
-			k_bias=sd2.pop(k2+".k_proj.bias")
-			v_bias=sd2.pop(k2+".v_proj.bias")
-			sd[k2+".in_proj_bias"]=torch.cat((q_bias,k_bias,v_bias)).to(torch.float16)
-		elif k.endswith(".q_proj.weight") or k.endswith(".k_proj.weight") or k.endswith(".v_proj.weight"):
-			pass
-		elif k.endswith(".q_proj.bias") or k.endswith(".k_proj.bias") or k.endswith(".v_proj.bias"):
-			pass
-		else:
-			sd[k]=sd2.pop(k)
-
-	for k,p in getattr(pipe, "vae").named_parameters():
-		if k.startswith("encoder.down_blocks."):
-			if "downsamplers" in k:
-				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.downsamplers\.([0-9]+)\.(\S+)",k)
-				m1=m.group(1)
-				m3=m.group(3)
-				k="first_stage_model.encoder.down."+m1+".downsample."+m3
-			else:
-				m=re.match(r"encoder\.down_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
-				m1=m.group(1)
-				m2=m.group(2)
-				m3=m.group(3)
-				if "conv_shortcut" in m3:
-					m3=m3.replace("conv_shortcut","nin_shortcut")
-				k="first_stage_model.encoder.down."+m1+".block."+m2+"."+m3
-		elif k.startswith("decoder.up_blocks."):
-			if "upsamplers" in k:
-				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.upsamplers\.([0-9]+)\.(\S+)",k)
-				m1=str(3-int(m.group(1)))
-				m3=m.group(3)
-				k="first_stage_model.decoder.up."+m1+".upsample."+m3
-			else:
-				m=re.match(r"decoder\.up_blocks\.([0-9]+)\.resnets\.([0-9]+)\.(\S+)",k)
-				m1=str(3-int(m.group(1)))
-				m2=m.group(2)
-				m3=m.group(3)
-				if "conv_shortcut" in m3:
-					m3=m3.replace("conv_shortcut","nin_shortcut")
-				k="first_stage_model.decoder.up."+m1+".block."+m2+"."+m3
-		else:
-			for k2 in vae_keys:
-				if k2 in k:
-					k=k.replace(k2,vae_keys[k2])
-			k="first_stage_model."+k
-		w=p.data.detach()
-		if "mid.attn_1" in k:
-			for k2 in ["q", "k", "v", "proj_out"]:
-				if k.endswith("mid.attn_1."+k2+".weight"):
-					if w.ndim!=1:
-						w=w.reshape(*w.shape, 1, 1)
-		sd[k]=w
-	del pipe.vae
-		
-	for k,p in getattr(pipe, "unet").named_parameters():
-		for k2 in unet_keys1:
-			if unet_keys1[k2] in k:
-				k=k.replace(unet_keys1[k2],k2)
-				if k2 in change_keys:
-					for k3 in unet_keys3:
-						if unet_keys3[k3] in k:
-							k=k.replace(unet_keys3[k3],k3)
-		for k2 in unet_keys2:
-			if k2 in k:
-				k=k.replace(k2,unet_keys2[k2])
-		k="model.diffusion_model."+k
-		sd[k]=p.data.detach()
-	del pipe.unet
-	del pipe
-
+	
 	if os.path.exists(os.getcwd()+"/safe_temp"):
 		shutil.rmtree(os.getcwd()+"/safe_temp")
 	os.mkdir(os.getcwd()+"/safe_temp")
 	sd2=load_file(base_safe)
-	keys=zip_ckpt(sd,sd2)
+	keys=zip_ckpt(pipe,sd2)
 	save_ckpt(keys,out_safe)
 	
 	shutil.rmtree(os.getcwd()+"/safe_temp")
