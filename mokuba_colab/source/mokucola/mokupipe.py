@@ -78,66 +78,81 @@ sgm_use=[
 	"Euler","Euler a","DPM++ 2M","DPM++ 2M SDE","DPM++ SDE","DPM++","DPM2","DPM2 a","Heun","LMS","UniPC","DPM++ 3M SDE"
 ]
 
-sdxl_unet_keys={
-	"in_layers_0": "norm1",
-	"in_layers_2": "conv1",
-	"out_layers_0": "norm2",
-	"out_layers_3": "conv2",
-	"emb_layers_1": "time_emb_proj",
+#unet_keys
+#sd - hf
+#sdxl
+unet_conversion_map1={
+	"time_embed.0.": "time_embedding.linear_1.",
+	"time_embed.2.": "time_embedding.linear_2.",
+	"input_blocks.0.0.": "conv_in.",
+	"out.0.": "conv_norm_out.",
+	"out.2.": "conv_out.",
+	"label_emb.0.0.": "add_embedding.linear_1.",
+	"label_emb.0.2.": "add_embedding.linear_2.",
 }
+unet_conversion_map_resnet={
+	"in_layers.0": "norm1",
+	"in_layers.2": "conv1",
+	"out_layers.0": "norm2",
+	"out_layers.3": "conv2",
+	"emb_layers.1": "time_emb_proj",
+	"skip_connection": "conv_shortcut",
+}
+unet_conversion_map_layer1=[]
 for i in range(3):
 	for j in range(2):
-		sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_0"]="down_blocks_"+str(i)+"_resnets_"+str(j)
+		unet_conversion_map_layer1+=[("input_blocks."+str(3 * i + j + 1)+".0.","down_blocks."+str(i)+".resnets."+str(j)+".")]
 		if i > 0:
-			sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_1"]="down_blocks_"+str(i)+"_attentions_"+str(j)
-
-	for j in range(4):
-		sdxl_unet_keys["output_blocks_"+str(3 * i + j)+"_0"]="up_blocks_"+str(i)+"_resnets_"+str(j)
-		if i < 2:
-			sdxl_unet_keys["output_blocks_"+str(3 * i + j)+"_1"]="up_blocks_"+str(i)+"_attentions_"+str(j)
-
-	if i < 3:
-		sdxl_unet_keys["input_blocks_"+str(3 * (i + 1))+"_0_op"]="down_blocks_"+str(i)+"_downsamplers_0_conv"
-
-		if i==0:
-			sdxl_unet_keys["output_blocks_"+str(3 * i + 2)+"_1"]="up_blocks_"+str(i)+"_upsamplers_0"
-		else:
-			sdxl_unet_keys["output_blocks_"+str(3 * i + 2)+"_2"]="up_blocks_"+str(i)+"_upsamplers_0"
-sdxl_unet_keys["output_blocks_2_1_conv"]="output_blocks_2_2_conv"
-
-sdxl_unet_keys["middle_block_1"]="mid_block_attentions_0"
-for j in range(2):
-	sdxl_unet_keys["middle_block_"+str(2 * j)]="mid_block_resnets_"+str(j)
-	
-sd_unet_keys={
-	"in_layers_0": "norm1",
-	"in_layers_2": "conv1",
-	"out_layers_0": "norm2",
-	"out_layers_3": "conv2",
-	"emb_layers_1": "time_emb_proj",
-}
-for i in range(4):
-	for j in range(2):
-		sd_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_0"]="down_blocks_"+str(i)+"_resnets_"+str(j)
-		if i < 3:
-			sdxl_unet_keys["input_blocks_"+str(3 * i + j + 1)+"_1"]="down_blocks_"+str(i)+"_attentions_"+str(j)
+			unet_conversion_map_layer1+=[("input_blocks."+str(3 * i + j + 1)+".1.","down_blocks."+str(i)+".attentions."+str(j)+".")]
 
 	for j in range(3):
-		sd_unet_keys["output_blocks_"+str(3 * i + j)+"_0"]="up_blocks_"+str(i)+"_resnets_"+str(j)
-		if i > 0:
-			sd_unet_keys["output_blocks_"+str(3 * i + j)+"_1"]="up_blocks_"+str(i)+"_attentions_"+str(j)
+		unet_conversion_map_layer1+=[("output_blocks."+str(3 * i + j)+".0.","up_blocks."+str(i)+".resnets."+str(j)+".")]
+		if i < 2:
+			unet_conversion_map_layer1+=[("output_blocks."+str(3 * i + j)+".1.","up_blocks."+str(i)+".attentions."+str(j)+".")]
 
 	if i < 3:
-		sd_unet_keys["input_blocks_"+str(3 * (i + 1))+"_0_op"]="down_blocks_"+str(i)+"_downsamplers_0_conv"
+		unet_conversion_map_layer1+=[("input_blocks."+str(3 * (i + 1))+".0.op.","down_blocks."+str(i)+".downsamplers.0.conv.")]
 
 		if i==0:
-			sd_unet_keys["output_blocks_"+str(3 * i + 2)+"_1"]="up_blocks_"+str(i)+"_upsamplers_0"
+			unet_conversion_map_layer1+=[("output_blocks."+str(3 * i + 2)+".1.","up_blocks."+str(i)+".upsamplers.0.")]
 		else:
-			sd_unet_keys["output_blocks_"+str(3 * i + 2)+"_2"]="up_blocks_"+str(i)+"_upsamplers_0"
+			unet_conversion_map_layer1+=[("output_blocks."+str(3 * i + 2)+".2.","up_blocks."+str(i)+".upsamplers.0.")]
+unet_conversion_map_layer1+=[("output_blocks.2.2.conv.","output_blocks.2.1.conv.")]
 
-sd_unet_keys["middle_block_1"]="mid_block_attentions_0"
+unet_conversion_map_layer1+=[("middle_block.1.","mid_block.attentions.0.")]
 for j in range(2):
-	sd_unet_keys["middle_block_"+str(2 * j)]="mid_block_resnets_"+str(j)
+	unet_conversion_map_layer1+=[("middle_block."+str(2 * j)+".","mid_block.resnets."+str(j)+".")]
+#sd
+unet_conversion_map2={
+	"time_embed.0.": "time_embedding.linear_1.",
+	"time_embed.2.": "time_embedding.linear_2.",
+	"input_blocks.0.0.": "conv_in.",
+	"out.0.": "conv_norm_out.",
+	"out.2.": "conv_out.",
+}
+unet_conversion_map_layer2=[]
+for i in range(4):
+	for j in range(2):
+		unet_conversion_map_layer2+=[("input_blocks."+str(3 * i + j + 1)+".0.","down_blocks."+str(i)+".resnets."+str(j)+".")]
+		if i < 3:
+			unet_conversion_map_layer2+=[("input_blocks."+str(3 * i + j + 1)+".1.","down_blocks."+str(i)+".attentions."+str(j)+".")]
+
+	for j in range(3):
+		unet_conversion_map_layer2+=[("output_blocks."+str(3 * i + j)+".0.","up_blocks."+str(i)+".resnets."+str(j)+".")]
+		if i > 0:
+			unet_conversion_map_layer2+=[("output_blocks."+str(3 * i + j)+".1.","up_blocks."+str(i)+".attentions."+str(j)+".")]
+
+	if i < 3:
+		unet_conversion_map_layer2+=[("input_blocks."+str(3 * (i + 1))+".0.op.","down_blocks."+str(i)+".downsamplers.0.conv.")]
+
+		if i==0:
+			unet_conversion_map_layer2+=[("output_blocks."+str(3 * i + 2)+".1.","up_blocks."+str(i)+".upsamplers.0.")]
+		else:
+			unet_conversion_map_layer2+=[("output_blocks."+str(3 * i + 2)+".2.","up_blocks."+str(i)+".upsamplers.0.")]
+
+unet_conversion_map_layer2+=[("middle_block.1.","mid_block.attentions.0.")]
+for j in range(2):
+	unet_conversion_map_layer2+=[("middle_block."+str(2 * j)+".","mid_block.resnets."+str(j)+".")]
 
 def create_gaussian_weight(w,h, sigma=0.3):
 	x = numpy.linspace(-1, 1, w)
@@ -362,171 +377,106 @@ class mokupipe:
 					line=line.replace(".safetensors","")
 				if os.path.exists(line+".safetensors"):
 					sd=load_file(line+".safetensors")
-					lora_check=False
-					for k in sd:
-						if k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight"):
-							lora_check=True
-							break
-
-					if lora_check:
-						if self.is_sdxl:
-							ukeys=[]
-							for name, module in self.pipe.unet.named_modules():
-								ukeys.append(name.replace(".","_"))
-							t1keys=[]
-							for name, module in self.pipe.text_encoder.named_modules():
-								t1keys.append(name.replace(".","_"))
-							t2keys=[]
-							for name, module in self.pipe.text_encoder_2.named_modules():
-								t2keys.append(name.replace(".","_"))
-	
-							msd={}
-							for k in sd:
-								if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
-									continue
-								if k.endswith(".lora_up.weight"):
-									m=k.removesuffix(".lora_up.weight")
-								else:
-									m=k.removesuffix(".lora_B.weight")
-								if m.replace(".","_").startswith("lora_unet_"):
-									m2=m.replace(".","_").removeprefix("lora_unet_")
-									for k2 in sdxl_unet_keys:
-										if k2 in m2:
-											m2=m2.replace(k2,sdxl_unet_keys[k2])
-									if m2 in ukeys:
-										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-											if m+k2 in sd:
-												msd[m+k2]=sd[m+k2]
-								elif m.replace(".","_").startswith("lora_te1_"):
-									if m.replace(".","_").removeprefix("lora_te1_") in t1keys:
-										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-											if m+k2 in sd:
-												msd[m+k2]=sd[m+k2]
-								elif m.replace(".","_").startswith("lora_te2_"):
-									if m.replace(".","_").removeprefix("lora_te2_") in t2keys:
-										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-											if m+k2 in sd:
-												msd[m+k2]=sd[m+k2]
-						else:
-							ukeys=[]
-							for name, module in self.pipe.unet.named_modules():
-								ukeys.append(name.replace(".","_"))
-							t1keys=[]
-							for name, module in self.pipe.text_encoder.named_modules():
-								t1keys.append(name.replace(".","_"))
-								
-							msd={}
-							for k in sd:
-								if not(k.endswith(".lora_up.weight") or k.endswith(".lora_B.weight")):
-									continue
-								if k.endswith(".lora_up.weight"):
-									m=k.removesuffix(".lora_up.weight")
-								else:
-									m=k.removesuffix(".lora_B.weight")
-								if m.replace(".","_").startswith("lora_unet_"):
-									m2=m.replace(".","_").removeprefix("lora_unet_")
-									for k2 in sd_unet_keys:
-										if k2 in m2:
-											m2=m2.replace(k2,sd_unet_keys[k2])
-									if m2 in ukeys:
-										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-											if m+k2 in sd:
-												msd[m+k2]=sd[m+k2]
-								elif m.replace(".","_").startswith("lora_te_"):
-									if m.replace(".","_").removeprefix("lora_te_") in t1keys:
-										for k2 in [".lora_up.weight",".lora_down.weight",".lora_B.weight",".lora_A.weight",".alpha"]:
-											if m+k2 in sd:
-												msd[m+k2]=sd[m+k2]
-
-						if msd=={}:
-							raise ValueError('These weights are not supported.')
-							
-						self.pipe.load_lora_weights(pretrained_model_name_or_path_or_dict=msd,torch_dtype=self.dtype)
-						self.pipe.fuse_lora(lora_scale= lora_weights[i])
-						self.pipe.unload_lora_weights()
-						if self.is_sdxl:
-							del msd,ukeys,t1keys,t2keys
-						else:
-							del msd,ukeys,t1keys
-					else:
-						MODULE_type=None
-						for m in MODULE_LIST:
-							for k in m.weight_list_det:
-								for k2 in sd:
-									if k2.endswith(k):
-										MODULE_type=m
-										break
-								if MODULE_type!=None:
+				
+					MODULE_type=None
+					for m in MODULE_LIST:
+						for k in m.weight_list_det:
+							for k2 in sd:
+								if k2.endswith(k):
+									MODULE_type=m
 									break
 							if MODULE_type!=None:
 								break
-						if MODULE_type==None:
-							raise ValueError('These weights are not supported.')
-						key_name=[]
-						for k in sd:
-							for k2 in MODULE_type.weight_list_det:
-								if k.endswith("."+k2):
-									key_name.append(k.removesuffix("."+k2))
+						if MODULE_type!=None:
+							break
+					if MODULE_type==None:
+						raise ValueError(line+".safetensors isn't supported.")
+					key_dict={}
+					for k in sd:
+						for k2 in MODULE_type.weight_list_det:
+							if k.endswith("."+k2):
+								k=k.removesuffix("."+k2)
+								key_dict[k]=k.replace(".","_")
 
-						usd={}
-						t1sd={}
-						t2sd={}
-						tsd={}
+					usd={}
+					t1sd={}
+					t2sd={}
+					tsd={}
 
-						for k in key_name:
-							m=k.replace(".","_")
-							if k.startswith("lora_unet_"):
-								m=m.removeprefix("lora_unet_")
-								if self.is_sdxl:
-									keys=sdxl_unet_keys
-								else:
-									keys=sd_unet_keys
-								for k2 in keys:
-									if k2 in m:
-										m=m.replace(k2,keys[k2])
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-							elif k.startswith("lora_te1_"):
-								m=m.removeprefix("lora_te1_")
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-							elif k.startswith("lora_te2_"):
-								m=m.removeprefix("lora_te2_")
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
-							elif k.startswith("lora_te_"):
-								m=m.removeprefix("lora_te_")
-								for k2 in MODULE_type.weight_list:
-									if k+"."+k2 in sd:
-										tsd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+					if self.is_sdxl:
+						unet_conversion_map=unet_conversion_map1
+						unet_conversion_map_layer=unet_conversion_map_layer1
+					else:
+						unet_conversion_map=unet_conversion_map2
+						unet_conversion_map_layer=unet_conversion_map_layer2
 
-						if self.is_sdxl and usd=={} and t1sd=={} and t2sd=={}:
-							raise ValueError('These weights are not supported.')
-						elif self.is_sdxl==False and usd=={} and tsd=={}:
-							raise ValueError('These weights are not supported.')
+					for k in unet_conversion_map:
+						m="lora_unet_"+k.removesuffix(".").replace(".","_")
+						if m in key_dict.values():
+							for k3 in key_dict:
+								if key_dict[k3]==m:
+									k4=k3
+									break
+							del key_dict[k4]
+							for k2 in MODULE_type.weight_list:
+								m2=k4+"."+k2
+								if m2 in sd:
+									usd["lycoris_"+unet_conversion_map[k].removesuffix(".").replace(".","_")+"."+k2]=sd.pop(m2)
 
-						if usd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.unet, weights_sd=usd)
-							wrapper.merge_to()
-						del usd
+					for k in key_dict:
+						m=k.replace(".","_")
+						if k.startswith("lora_unet_"):
+							m=m.removeprefix("lora_unet_")
+							m=m.replace("output_blocks_2_2_conv","up_blocks_0_upsamplers_0_conv")
+							for k2 in unet_conversion_map_layer:
+								k3=k2[0].removesuffix(".").replace(".","_")
+								m=m.replace(k3,k2[1].removesuffix(".").replace(".","_"))
+							if "resnets" in m:
+								for k2 in unet_conversion_map_resnet:
+									m=m.replace(k2.replace(".","_"),unet_conversion_map_resnet[k2])
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									usd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						elif k.startswith("lora_te1_"):
+							m=m.removeprefix("lora_te1_")
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									t1sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						elif k.startswith("lora_te2_"):
+							m=m.removeprefix("lora_te2_")
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									t2sd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
+						elif k.startswith("lora_te_"):
+							m=m.removeprefix("lora_te_")
+							for k2 in MODULE_type.weight_list:
+								if k+"."+k2 in sd:
+									tsd["lycoris_"+m+"."+k2]=sd[k+"."+k2]
 
-						if self.is_sdxl and t1sd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=t1sd)
-							wrapper.merge_to()
-						del t1sd
+					if self.is_sdxl==True and usd=={} and t1sd=={} and t2sd=={}:
+						raise ValueError(line+".safetensors isn't supported.")
+					elif self.is_sdxl==False and usd=={} and tsd=={}:
+						raise ValueError(line+".safetensors isn't supported.")
 
-						if self.is_sdxl and t2sd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder_2, weights_sd=t2sd)
-							wrapper.merge_to()
-						del t2sd
+					if usd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.unet, weights_sd=usd)
+						wrapper.merge_to()
+					del usd
 
-						if self.is_sdxl==False and tsd!={}:
-							wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=tsd)
-							wrapper.merge_to()
-						del tsd
+					if self.is_sdxl==True and t1sd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=t1sd)
+						wrapper.merge_to()
+					del t1sd
+
+					if self.is_sdxl==True and t2sd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder_2, weights_sd=t2sd)
+						wrapper.merge_to()
+					del t2sd
+
+					if self.is_sdxl==False and tsd!={}:
+						wrapper, _ = create_lycoris_from_weights(multiplier=lora_weights[i],file="dummy.safetensors",module=self.pipe.text_encoder, weights_sd=tsd)
+						wrapper.merge_to()
+					del tsd
 
 					print(line+".safetensors is loaded.")
 
