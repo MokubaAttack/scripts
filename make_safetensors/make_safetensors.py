@@ -220,7 +220,7 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 						m=m.replace("output_blocks_2_2_conv","up_blocks_0_upsamplers_0_conv")
 						for k2 in unet_conversion_map_layer:
 							k3=k2[0].removesuffix(".").replace(".","_")
-							m=m.replace(k3,K2[1].removesuffix(".").replace(".","_"))
+							m=m.replace(k3,k2[1].removesuffix(".").replace(".","_"))
 						if "resnets" in m:
 							for k2 in unet_conversion_map_resnet:
 								m=m.replace(k2.replace(".","_"),unet_conversion_map_resnet[k2])
