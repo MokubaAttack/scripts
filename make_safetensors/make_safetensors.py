@@ -64,7 +64,7 @@ for i in range(3):
 		if i > 0:
 			unet_conversion_map_layer+=[("input_blocks."+str(3 * i + j + 1)+".1.","down_blocks."+str(i)+".attentions."+str(j)+".")]
 
-	for j in range(4):
+	for j in range(3):
 		unet_conversion_map_layer+=[("output_blocks."+str(3 * i + j)+".0.","up_blocks."+str(i)+".resnets."+str(j)+".")]
 		if i < 2:
 			unet_conversion_map_layer+=[("output_blocks."+str(3 * i + j)+".1.","up_blocks."+str(i)+".attentions."+str(j)+".")]
