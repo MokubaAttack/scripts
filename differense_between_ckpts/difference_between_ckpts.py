@@ -1,11 +1,13 @@
+import os
+os.environ["HF_HOME"]=os.getcwd()+"/pipecache"
+import torch,gc,shutil
 from diffusers import StableDiffusionXLPipeline
-import torch,gc,os,shutil
 from safetensors.torch import load_file, save_file
 
 CLAMP_QUANTILE=0.99
 
 def mk_box(ind,path,out_path,c):
-    pipe = StableDiffusionXLPipeline.from_single_file(path, torch_dtype=torch.float16,cache_dir=os.getcwd()+"/pipecache")
+    pipe = StableDiffusionXLPipeline.from_single_file(path, torch_dtype=torch.float32)
     names=[]
     if c[0]:
         for name, module in pipe.unet.named_modules():
