@@ -1,10 +1,11 @@
+import os
+os.environ["HF_HOME"]=os.getcwd()+"/pipecache"
 from diffusers import (
 	StableDiffusionXLPipeline,
 	AutoencoderKL
 )
 import torch
 import shutil
-import os
 import re
 import math
 from safetensors.torch import (
@@ -265,7 +266,6 @@ def run(base_safe,vae_safe,out_safe,lora1,lora2,lora3,lora1w,lora2w,lora3w,win=N
 	pipe = StableDiffusionXLPipeline.from_single_file(
 		base_safe,
 		torch_dtype=torch.float32,
-		cache_dir=os.getcwd()+"/pipecache",
 		)
 	if vae_safe!="":
 		if os.path.exists(vae_safe):
